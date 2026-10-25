@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Secure OTP Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .otp-card {
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+      width: 100%; max-width: 420px;
+      overflow: hidden;
+      animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes slideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+    .otp-card-header {
+      background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+      padding: 2rem 2rem 1.75rem; text-align: center; color: white;
+    }
+    .otp-brand-icon {
+      width:52px;height:52px;background:rgba(255,255,255,0.2);border-radius:14px;
+      display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;
+    }
+    .otp-card-header h2 { font-size:1.35rem;font-weight:700;margin-bottom:0.3rem; }
+    .otp-card-header p  { font-size:0.875rem;opacity:0.85; }
+    .otp-card-body { padding: 1.75rem 2rem; }
+    .otp-step { display: none; }
+    .otp-step.active { display:block;animation:fadeIn 0.3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+    .form-label { display:block;font-size:0.825rem;font-weight:600;color:#374151;margin-bottom:0.5rem; }
+    .form-input {
+      width:100%;padding:0.75rem 1rem;border:2px solid #e5e7eb;border-radius:10px;
+      font-size:1rem;font-family:inherit;color:#111827;background:#f9fafb;
+      transition:border-color 0.2s,box-shadow 0.2s;outline:none;
+    }
+    .form-input:focus { border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,0.12);background:#fff; }
+    .input-hint { font-size:0.775rem;color:#6b7280;margin-top:0.4rem; }
+    .otp-digits-row { display:flex;gap:0.6rem;justify-content:center;margin:1.25rem 0; }
+    .otp-digit-box {
+      width:52px;height:58px;border:2px solid #e5e7eb;border-radius:10px;
+      font-size:1.5rem;font-weight:700;text-align:center;color:#4f46e5;
+      background:#f9fafb;transition:border-color 0.2s,box-shadow 0.2s;outline:none;
+    }
+    .otp-digit-box:focus { border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,0.12);background:#fff; }
+    .btn-primary {
+      width:100%;padding:0.85rem 1.5rem;
+      background:linear-gradient(135deg,#4f46e5 0%,#2563eb 100%);
+      color:white;border:none;border-radius:10px;font-size:0.95rem;font-weight:600;
+      font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;
+      gap:0.5rem;transition:opacity 0.2s,transform 0.15s;margin-top:1.25rem;
+    }
+    .btn-primary:hover:not(:disabled){opacity:0.9;transform:translateY(-1px);}
+    .btn-primary:disabled{opacity:0.6;cursor:not-allowed;}
+    .btn-ghost {
+      background:none;border:none;font-size:0.825rem;color:#4f46e5;font-family:inherit;
+      cursor:pointer;font-weight:600;padding:0;text-decoration:underline;
+    }
+    .timer-row { display:flex;justify-content:space-between;align-items:center;margin-top:1rem;font-size:0.825rem;color:#6b7280; }
+    .timer-pill { background:#f3f4f6;border-radius:20px;padding:0.3rem 0.75rem;font-weight:600;color:#374151; }
+    .alert { border-radius:8px;padding:0.75rem 1rem;font-size:0.825rem;font-weight:500;margin-top:1rem;display:none;align-items:center;gap:0.5rem; }
+    .alert.show{display:flex;}
+    .alert.success{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
+    .alert.error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+    .alert.info{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;}
+    .step-dots{display:flex;gap:0.4rem;justify-content:center;margin-bottom:1.25rem;}
+    .step-dot{width:8px;height:8px;border-radius:50%;background:#e5e7eb;transition:background 0.3s,transform 0.2s;}
+    .step-dot.active{background:#4f46e5;transform:scale(1.3);}
+    .step-dot.done{background:#10b981;}
+    .success-screen{text-align:center;padding:1rem 0 0.5rem;}
+    .success-icon {
+      width:72px;height:72px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;
+      display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;
+      animation:popIn 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes popIn{from{transform:scale(0.4);opacity:0}to{transform:scale(1);opacity:1}}
+    .success-screen h3{font-size:1.25rem;font-weight:700;color:#111827;margin-bottom:0.4rem;}
+    .success-screen p{font-size:0.875rem;color:#6b7280;line-height:1.6;}
+    .verified-phone{font-weight:700;color:#4f46e5;}
+    .spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .divider{display:flex;align-items:center;gap:0.75rem;margin:1.25rem 0;color:#9ca3af;font-size:0.8rem;}
+    .divider::before,.divider::after{content:'';flex:1;border-top:1px solid #e5e7eb;}
+    .powered-by{text-align:center;margin-top:1.5rem;font-size:0.75rem;color:#9ca3af;}
+    .powered-by a{color:#4f46e5;text-decoration:none;font-weight:600;}
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     OMNIOTP LOGIN WIDGET
+     Copy from WIDGET START to WIDGET END into your HTML page
+     ============================================================ -->
+
+<!-- WIDGET START -->
+<div class="otp-card" id="omniotp-widget">
+
+  <div class="otp-card-header">
+    <div class="otp-brand-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <h2 id="widget-title">Secure Phone Login</h2>
+    <p id="widget-subtitle">Verify your mobile number to continue</p>
+  </div>
+
+  <div class="otp-card-body">
+    <div class="step-dots">
+      <div class="step-dot active" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <div class="step-dot" id="dot-3"></div>
+    </div>
+
+    <!-- STEP 1: Phone -->
+    <div class="otp-step active" id="step-phone">
+      <label for="widget-phone-input" class="form-label">Mobile Number</label>
+      <input type="tel" id="widget-phone-input" class="form-input"
+        placeholder="Enter 10-digit number (e.g. 9876543210)" maxlength="15" autofocus>
+      <p class="input-hint">Indian 10-digit or international (+CC...) format</p>
+      <div class="alert info show" id="info-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        A 6-digit OTP will be sent to your phone via SMS
+      </div>
+      <div class="alert error" id="phone-error"></div>
+      <button class="btn-primary" id="btn-send-otp" onclick="sendOTP()">
+        <span id="send-btn-text">Send OTP</span>
+        <div class="spinner" id="send-spinner"></div>
+        <svg id="send-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+
+    <!-- STEP 2: Verify OTP -->
+    <div class="otp-step" id="step-verify">
+      <p style="font-size:0.875rem;color:#374151;text-align:center;margin-bottom:0.25rem;">
+        OTP sent to <strong id="display-phone" style="color:#4f46e5;"></strong>
+      </p>
+      <p style="font-size:0.8rem;color:#6b7280;text-align:center;">Enter the 6-digit code below</p>
+      <div class="otp-digits-row" id="otp-boxes-row">
+        <input class="otp-digit-box" type="text" maxlength="1" inputmode="numeric" id="otp-d0" oninput="otpInput(0)" onkeydown="otpKeydown(event,0)">
+        <input class="otp-digit-box" type="text" maxlength="1" inputmode="numeric" id="otp-d1" oninput="otpInput(1)" onkeydown="otpKeydown(event,1)">
+        <input class="otp-digit-box" type="text" maxlength="1" inputmode="numeric" id="otp-d2" oninput="otpInput(2)" onkeydown="otpKeydown(event,2)">
+        <input class="otp-digit-box" type="text" maxlength="1" inputmode="numeric" id="otp-d3" oninput="otpInput(3)" onkeydown="otpKeydown(event,3)">
+        <input class="otp-digit-box" type="text" maxlength="1" inputmode="numeric" id="otp-d4" oninput="otpInput(4)" onkeydown="otpKeydown(event,4)">
+        <input class="otp-digit-box" type="text" maxlength="1" inputmode="numeric" id="otp-d5" oninput="otpInput(5)" onkeydown="otpKeydown(event,5)">
+      </div>
+      <div class="alert error" id="verify-error"></div>
+      <div class="alert success" id="verify-success"></div>
+      <button class="btn-primary" id="btn-verify-otp" onclick="verifyOTP()">
+        <span id="verify-btn-text">Verify &amp; Login</span>
+        <div class="spinner" id="verify-spinner"></div>
+        <svg id="verify-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </button>
+      <div class="timer-row">
+        <span>Code expires in <span class="timer-pill" id="otp-timer">05:00</span></span>
+        <button class="btn-ghost" id="btn-resend" onclick="resendOTP()" disabled style="opacity:0.4;">Resend</button>
+      </div>
+      <div class="divider">or</div>
+      <div style="text-align:center;">
+        <button class="btn-ghost" onclick="goBackToPhone()">Change Phone Number</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Success -->
+    <div class="otp-step" id="step-success">
+      <div class="success-screen">
+        <div class="success-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h3>Phone Verified!</h3>
+        <p>Welcome! Logged in as<br><span class="verified-phone" id="success-phone"></span></p>
+        <button class="btn-primary" onclick="onLoginSuccess()" style="margin-top:1.5rem;">
+          Continue to Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="powered-by">
+    Secured by <a href="https://omniotp.onrender.com" target="_blank">OmniOTP</a> &amp; <a href="https://httpsms.com" target="_blank">httpSMS</a>
+  </div>
+  <div style="height:1.25rem;"></div>
+</div>
+<!-- WIDGET END -->
+
+<!-- ============================================================
+     SCRIPT — Copy this before </body> in your page
+     Change the 3 CONFIG values below!
+     ============================================================ -->
+<script>
+  /* ── CONFIG: Change these 3 lines ── */
+  const OMNIOTP_API_URL  = 'https://omniotp.onrender.com';
+  const OMNIOTP_API_KEY  = 'sk_live_omni_7a9f4c82b1d3e6';
+  const OMNIOTP_APP_NAME = 'My Website';
+
+  let currentPhone = '', currentSessionId = '';
+  let timerInterval = null, resendTimeout = null;
+
+  async function sendOTP() {
+    const phone = normalizePhone(document.getElementById('widget-phone-input').value.trim());
+    if (!phone) { showAlert('phone-error','Please enter a valid mobile number','error'); return; }
+    hideAlert('phone-error');
+    setLoading('send', true);
+    try {
+      const res = await fetch(OMNIOTP_API_URL + '/api/v1/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': OMNIOTP_API_KEY },
+        body: JSON.stringify({ phone, app_name: OMNIOTP_APP_NAME, length: 6, expiry_minutes: 5,
+          template: 'Your ' + OMNIOTP_APP_NAME + ' login OTP is {{otp}}. Valid for {{expiry}} minutes. Do NOT share.' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentPhone = phone; currentSessionId = data.session_id;
+        document.getElementById('display-phone').textContent = phone;
+        document.getElementById('success-phone').textContent = phone;
+        goToStep(2);
+        startOtpTimer(300); startResendCooldown(60);
+        document.getElementById('otp-d0').focus();
+      } else {
+        showAlert('phone-error', data.error || 'Failed to send OTP. Try again.', 'error');
+      }
+    } catch(e) { showAlert('phone-error','Network error. Check your connection.','error'); }
+    setLoading('send', false);
+  }
+
+  async function verifyOTP() {
+    const code = [0,1,2,3,4,5].map(i => document.getElementById('otp-d'+i).value).join('');
+    if (!/^\d{6}$/.test(code)) { showAlert('verify-error','Please enter the complete 6-digit OTP','error'); return; }
+    hideAlert('verify-error');
+    setLoading('verify', true);
+    try {
+      const res = await fetch(OMNIOTP_API_URL + '/api/v1/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': OMNIOTP_API_KEY },
+        body: JSON.stringify({ session_id: currentSessionId, otp: code })
+      });
+      const data = await res.json();
+      if (data.success && data.verified) {
+        clearInterval(timerInterval); clearTimeout(resendTimeout);
+        showAlert('verify-success','OTP verified successfully!','success');
+        setTimeout(() => goToStep(3), 800);
+      } else {
+        const left = data.attempts_remaining;
+        showAlert('verify-error', left !== undefined ? 'Wrong OTP. ' + left + ' attempt(s) remaining.' : (data.error || 'Invalid OTP.'), 'error');
+        [0,1,2,3,4,5].forEach(i => document.getElementById('otp-d'+i).value = '');
+        document.getElementById('otp-d0').focus();
+      }
+    } catch(e) { showAlert('verify-error','Network error. Check your connection.','error'); }
+    setLoading('verify', false);
+  }
+
+  async function resendOTP() {
+    clearInterval(timerInterval);
+    document.getElementById('widget-phone-input').value = currentPhone;
+    await sendOTP();
+  }
+
+  function goBackToPhone() {
+    clearInterval(timerInterval); clearTimeout(resendTimeout);
+    [0,1,2,3,4,5].forEach(i => document.getElementById('otp-d'+i).value = '');
+    hideAlert('verify-error'); hideAlert('verify-success');
+    goToStep(1);
+  }
+
+  /* ====================================================
+     PUT YOUR REDIRECT LOGIC HERE after successful login!
+     ==================================================== */
+  function onLoginSuccess() {
+    alert('Welcome! ' + currentPhone + ' verified successfully.');
+    // window.location.href = '/dashboard';   <-- uncomment to redirect
+  }
+
+  function otpInput(idx) {
+    const box = document.getElementById('otp-d'+idx);
+    box.value = box.value.replace(/\D/g,'').slice(-1);
+    if (box.value && idx < 5) document.getElementById('otp-d'+(idx+1)).focus();
+    if (idx === 5 && box.value) {
+      const code = [0,1,2,3,4,5].map(i=>document.getElementById('otp-d'+i).value).join('');
+      if (code.length === 6) verifyOTP();
+    }
+  }
+
+  function otpKeydown(e, idx) {
+    if (e.key === 'Backspace' && !document.getElementById('otp-d'+idx).value && idx > 0)
+      document.getElementById('otp-d'+(idx-1)).focus();
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      setTimeout(() => {
+        const pasted = document.getElementById('otp-d'+idx).value.replace(/\D/g,'').slice(0,6);
+        if (pasted.length >= 6) {
+          for (let i=0;i<6;i++) document.getElementById('otp-d'+i).value = pasted[i]||'';
+          document.getElementById('otp-d5').focus(); verifyOTP();
+        }
+      }, 10);
+    }
+  }
+
+  function startOtpTimer(secs) {
+    let r = secs; clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      r--;
+      document.getElementById('otp-timer').textContent =
+        String(Math.floor(r/60)).padStart(2,'0') + ':' + String(r%60).padStart(2,'0');
+      if (r <= 0) { clearInterval(timerInterval); showAlert('verify-error','OTP expired. Request a new one.','error'); }
+    }, 1000);
+  }
+
+  function startResendCooldown(secs) {
+    const btn = document.getElementById('btn-resend');
+    btn.disabled = true; btn.style.opacity = '0.4';
+    let r = secs;
+    resendTimeout = setInterval(() => {
+      r--; btn.textContent = 'Resend (' + r + 's)';
+      if (r <= 0) { clearInterval(resendTimeout); btn.textContent='Resend'; btn.disabled=false; btn.style.opacity='1'; }
+    }, 1000);
+  }
+
+  function goToStep(n) {
+    ['step-phone','step-verify','step-success'].forEach((id,i) =>
+      document.getElementById(id).classList.toggle('active', i+1===n));
+    ['dot-1','dot-2','dot-3'].forEach((id,i) => {
+      document.getElementById(id).classList.toggle('active', i+1===n);
+      document.getElementById(id).classList.toggle('done', i+1<n);
+    });
+    const T = ['Secure Phone Login','Enter Verification Code','Verification Complete'];
+    const S = ['Verify your mobile number to continue','OTP sent to '+currentPhone,'You are now logged in'];
+    document.getElementById('widget-title').textContent = T[n-1];
+    document.getElementById('widget-subtitle').textContent = S[n-1];
+  }
+
+  function setLoading(which, on) {
+    if (which==='send') {
+      document.getElementById('btn-send-otp').disabled = on;
+      document.getElementById('send-spinner').style.display = on?'block':'none';
+      document.getElementById('send-btn-icon').style.display = on?'none':'block';
+      document.getElementById('send-btn-text').textContent = on?'Sending...':'Send OTP';
+    } else {
+      document.getElementById('btn-verify-otp').disabled = on;
+      document.getElementById('verify-spinner').style.display = on?'block':'none';
+      document.getElementById('verify-btn-icon').style.display = on?'none':'block';
+      document.getElementById('verify-btn-text').textContent = on?'Verifying...':'Verify & Login';
+    }
+  }
+
+  function showAlert(id,msg,type) {
+    const el = document.getElementById(id);
+    el.textContent = msg; el.className = 'alert '+type+' show';
+  }
+  function hideAlert(id) { document.getElementById(id).classList.remove('show'); }
+
+  function normalizePhone(raw) {
+    let c = raw.replace(/[\s\-\(\)\.]/g,'');
+    if (c.startsWith('00')) c = '+'+c.slice(2);
+    if (c.startsWith('+')) return c;
+    if (/^\d{10}$/.test(c)) return '+91'+c;
+    if (/^91\d{10}$/.test(c)) return '+'+c;
+    return c ? '+'+c : '';
+  }
+
+  document.getElementById('widget-phone-input').addEventListener('keydown', e => {
+    if (e.key==='Enter') sendOTP();
+  });
+</script>
+
+</body>
+</html>
