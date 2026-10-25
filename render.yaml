@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: omni-otp-cloud
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: HTTPSMS_API_KEY
+        value: uk_wBxpD1neiGl12lD0pW736lzcEQIYasr253HFwsp4ZIE5dDB09OX8JdkZRqkMx1x7
+      - key: HTTPSMS_FROM
+        value: +918290866520
+      - key: MASTER_API_KEY
+        value: sk_live_omni_7a9f4c82b1d3e6
+      - key: NODE_ENV
+        value: production
