@@ -3,1232 +3,460 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OmniOTP Cloud - Universal SMS & OTP Platform powered by httpSMS</title>
-  <meta name="description" content="Enterprise Universal OTP Provider & SMS Cloud Platform powered by httpSMS Android Gateway. Features REST API with API Keys, Templates Engine, Bulk SMS, Android & Web SDKs, and Phone Visualizer.">
-  <meta name="keywords" content="httpsms, universal otp provider, sms gateway, otp api, bulk sms, android sms api, 2fa authentication">
-  <meta name="theme-color" content="#f8fafc">
-
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Custom Stylesheet -->
+  <title>OmniOTP Cloud - Universal OTP & SMS Platform</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-  <!-- Confetti Canvas for Celebratory Animations -->
-  <canvas id="confetti-canvas"></canvas>
-
-  <!-- Application Header -->
-  <header class="app-header">
-    <div class="header-container">
-      <div class="header-brand">
-        <div class="brand-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
-        </div>
-        <div class="brand-titles">
-          <h1>OmniOTP Cloud</h1>
-          <span class="brand-tag">Universal SMS &amp; OTP Platform • httpSMS Gateway</span>
-        </div>
-      </div>
-
-      <div class="header-controls">
-        <!-- Live Gateway Status Pill -->
-        <div id="header-mode-badge" class="status-badge mode-live" title="Click to toggle between Simulator Sandbox and Live httpSMS API">
-          <span class="pulse-dot"></span> <span id="header-mode-text">LIVE HTTPSMS (+918290866520)</span>
-        </div>
-
-        <!-- Backend Server Engine Pill -->
-        <div id="backend-engine-pill" class="status-badge backend-badge" title="API Gateway Engine Mode">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
-          <span id="backend-status-text">API Active</span>
-        </div>
-
-        <a href="https://httpsms.com/settings" target="_blank" rel="noopener noreferrer" class="docs-link-btn" title="Open official httpSMS Web Console">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-          httpSMS
-        </a>
-
-        <!-- Light / Dark Mode Toggle Button -->
-        <button type="button" id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light / Dark Mode">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-        </button>
-
-        <!-- Toggle Mockup Visibility Button (for smaller screens) -->
-        <button type="button" id="toggle-mockup-btn" class="icon-toggle-btn" title="Toggle Smartphone Visualizer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-        </button>
-      </div>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">🔐</div>
+      <div class="brand-name">OmniOTP Cloud</div>
     </div>
-  </header>
-
-  <!-- Executive Summary Metric Stat Cards -->
-  <section class="metrics-banner-container">
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-icon-box cyan">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-        </div>
-        <div class="metric-info">
-          <span class="metric-label">Dispatched SMS</span>
-          <h3 id="stat-total-dispatched" class="metric-value">0</h3>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-section="dashboard" title="Dashboard">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Dashboard</span>
+      </button>
+      <button class="nav-item" data-section="send-otp" title="Send OTP">
+        <span class="nav-icon">✉️</span>
+        <span class="nav-label">Send OTP</span>
+      </button>
+      <button class="nav-item" data-section="verify-otp" title="Verify OTP">
+        <span class="nav-icon">🔑</span>
+        <span class="nav-label">Verify OTP</span>
+      </button>
+      <button class="nav-item" data-section="sms-send" title="Direct SMS">
+        <span class="nav-icon">💬</span>
+        <span class="nav-label">Direct SMS</span>
+      </button>
+      <button class="nav-item" data-section="bulk-sms" title="Bulk SMS">
+        <span class="nav-icon">📣</span>
+        <span class="nav-label">Bulk SMS</span>
+      </button>
+      <button class="nav-item" data-section="logs" title="Audit Logs">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Audit Logs</span>
+      </button>
+      <button class="nav-item" data-section="gateways" title="Gateways">
+        <span class="nav-icon">🌐</span>
+        <span class="nav-label">Gateways</span>
+      </button>
+      <button class="nav-item" data-section="api-keys" title="API Keys">
+        <span class="nav-icon">🔑</span>
+        <span class="nav-label">API Keys</span>
+      </button>
+      <button class="nav-item" data-section="templates" title="Templates">
+        <span class="nav-icon">📨</span>
+        <span class="nav-label">Templates</span>
+      </button>
+      <button class="nav-item" data-section="playground" title="API Playground">
+        <span class="nav-icon">🧪</span>
+        <span class="nav-label">Playground</span>
+      </button>
+      <button class="nav-item" data-section="settings" title="Settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <div class="user-avatar">R</div>
+        <div class="user-info">
+          <div class="user-name">Roberts Grant</div>
+          <div class="user-role">Admin</div>
         </div>
       </div>
-
-      <div class="metric-card">
-        <div class="metric-icon-box emerald">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        </div>
-        <div class="metric-info">
-          <span class="metric-label">Verified OTPs</span>
-          <h3 id="stat-total-verified" class="metric-value">0</h3>
-        </div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-icon-box purple">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-        </div>
-        <div class="metric-info">
-          <span class="metric-label">Verification Rate</span>
-          <h3 id="stat-success-rate" class="metric-value">100%</h3>
-        </div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-icon-box gold">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-        </div>
-        <div class="metric-info">
-          <span class="metric-label">Platform API Keys</span>
-          <h3 id="stat-api-keys" class="metric-value">3 Active</h3>
-        </div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-icon-box blue">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        </div>
-        <div class="metric-info">
-          <span class="metric-label">SMS Templates</span>
-          <h3 id="stat-templates-count" class="metric-value">5 Saved</h3>
-        </div>
-      </div>
+      <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse">◀</button>
     </div>
-  </section>
+  </aside>
 
-  <!-- Main Container: Workspace (Left) + Phone Mockup (Right) -->
-  <main class="app-container">
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-header">
+      <button class="menu-btn" id="menu-btn">☰</button>
+      <div class="header-title">
+        <h1 id="page-title">Dashboard</h1>
+        <p id="page-subtitle">Welcome back, Roberts Grant</p>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">🌓</button>
+        <div class="status-indicator">
+          <span class="status-dot live"></span>
+          <span class="status-text">Live HTTPSMS (+917852081659)</span>
+        </div>
+      </div>
+    </header>
 
-    <!-- Left / Center Operations Center -->
-    <section class="main-workspace">
+    <!-- ============ DASHBOARD OVERVIEW ============ -->
+    <section id="dashboard" class="section active">
+      <div class="page-header">
+        <h2>Dashboard</h2>
+        <p>Overview of OTP dispatches, verification status, and gateway activity.</p>
+      </div>
 
-      <!-- Navigation Tabs -->
-      <nav class="nav-tab-strip" aria-label="Main Navigation">
-        <button class="nav-tab-btn active" data-tab="overview" id="tab-btn-overview">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-          Overview
-        </button>
-        <button class="nav-tab-btn" data-tab="api-keys" id="tab-btn-keys">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          API Keys
-        </button>
-        <button class="nav-tab-btn" data-tab="templates" id="tab-btn-templates">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          Templates
-        </button>
-        <button class="nav-tab-btn" data-tab="send-otp" id="tab-btn-send">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-          Send OTP
-        </button>
-        <button class="nav-tab-btn" data-tab="verify-otp" id="tab-btn-verify">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          Verify OTP
-        </button>
-        <button class="nav-tab-btn" data-tab="direct-sms" id="tab-btn-direct">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-          Quick SMS
-        </button>
-        <button class="nav-tab-btn" data-tab="bulk-sms" id="tab-btn-bulk">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          Bulk SMS
-        </button>
-        <button class="nav-tab-btn" data-tab="api-playground" id="tab-btn-playground">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          API Playground
-        </button>
-        <button class="nav-tab-btn" data-tab="integration" id="tab-btn-integration">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-          SDKs &amp; Templates
-        </button>
-        <button class="nav-tab-btn" data-tab="logs" id="tab-btn-logs">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-          Audit Logs
-        </button>
-        <button class="nav-tab-btn" data-tab="settings" id="tab-btn-settings">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-          Settings
-        </button>
-      </nav>
-
-      <!-- ========================================================
-           TAB 1: OVERVIEW / DASHBOARD
-           ======================================================== -->
-      <div id="tab-overview" class="tab-panel active">
-        <div class="glass-card">
-          <!-- Hero Banner -->
-          <div class="overview-hero">
-            <div class="overview-hero-text">
-              <span class="hero-chip">Universal OTP Cloud Gateway</span>
-              <h2>Dispatch, Verify &amp; Manage Mobile OTPs Anywhere</h2>
-              <p>Turn your Android phone into an enterprise-grade SMS &amp; OTP API gateway using httpSMS. Connect your Android apps, websites, backend servers, and marketing campaigns with 100% control and zero telecom middlemen.</p>
-              
-              <div class="hero-actions-row">
-                <button type="button" class="btn-primary" data-action="switch-tab" data-target-tab="send-otp">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                  Send Test OTP
-                </button>
-                <button type="button" class="btn-secondary" data-action="switch-tab" data-target-tab="api-keys">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                  Manage API Keys
-                </button>
-                <button type="button" class="btn-secondary" data-action="switch-tab" data-target-tab="bulk-sms">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                  Bulk SMS Engine
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Gateway & Service Status Grid -->
-          <div class="card-section-title">
-            <h3>Gateway Health &amp; Subsystems</h3>
-            <span>Real-time status indicators</span>
-          </div>
-
-          <div class="health-status-grid">
-            <div class="health-card">
-              <div class="health-status-dot online"></div>
-              <div class="health-card-content">
-                <strong>httpSMS GSM Gateway</strong>
-                <p>Android SIM Card: <span class="text-cyan">+91 82908-66520</span></p>
-                <span class="health-status-tag">Connected &amp; Ready</span>
-              </div>
-            </div>
-
-            <div class="health-card">
-              <div class="health-status-dot online"></div>
-              <div class="health-card-content">
-                <strong>REST API Provider</strong>
-                <p>Authentication: <span class="text-cyan">x-api-key Header</span></p>
-                <span class="health-status-tag">Bearer Auth Active</span>
-              </div>
-            </div>
-
-            <div class="health-card">
-              <div class="health-status-dot online"></div>
-              <div class="health-card-content">
-                <strong>OTP Cryptographic Engine</strong>
-                <p>Entropy: <span class="text-cyan">CryptoRandom Uint32</span></p>
-                <span class="health-status-tag">SHA-256 State</span>
-              </div>
-            </div>
-
-            <div class="health-card">
-              <div class="health-status-dot online"></div>
-              <div class="health-card-content">
-                <strong>Templates Engine</strong>
-                <p>Tags: <span class="text-cyan">{{otp}}, {{expiry}}, {{app_name}}</span></p>
-                <span class="health-status-tag">5 Presets Loaded</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Code Callout -->
-          <div class="api-quick-callout">
-            <div class="callout-header">
-              <h4>External App Integration: 1-Line Universal Call</h4>
-              <button type="button" class="btn-copy-code" id="btn-copy-quick-curl">Copy cURL</button>
-            </div>
-            <pre class="code-pre-box"><code id="quick-curl-code">curl -X POST "http://localhost:5000/api/v1/otp/send" \
-  -H "x-api-key: sk_live_omni_7a9f4c82b1d3e6" \
-  -H "Content-Type: application/json" \
-  -d '{"phone": "+919876543210", "app_name": "My App", "expiry_minutes": 5}'</code></pre>
-          </div>
-
+      <!-- Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card metric-primary">
+          <div class="metric-label">Total Dispatched</div>
+          <div class="metric-value" id="stat-total-dispatched">0</div>
+          <div class="metric-trend positive"><span>▲</span> 12% vs last period</div>
+        </div>
+        <div class="metric-card metric-success">
+          <div class="metric-label">Verified</div>
+          <div class="metric-value" id="stat-total-verified">0</div>
+          <div class="metric-trend positive"><span>▲</span> 8% vs last period</div>
+        </div>
+        <div class="metric-card metric-warning">
+          <div class="metric-label">Failed</div>
+          <div class="metric-value" id="stat-total-failed">0</div>
+          <div class="metric-trend neutral"><span>─</span> No change</div>
+        </div>
+        <div class="metric-card metric-info">
+          <div class="metric-label">Active Sessions</div>
+          <div class="metric-value" id="stat-active-sessions">0</div>
+          <div class="metric-trend neutral"><span>─</span> No change</div>
+        </div>
+        <div class="metric-card metric-secondary">
+          <div class="metric-label">API Keys</div>
+          <div class="metric-value" id="stat-api-keys">0 Active</div>
+          <div class="metric-trend neutral"><span>─</span> No change</div>
+        </div>
+        <div class="metric-card metric-secondary">
+          <div class="metric-label">Templates</div>
+          <div class="metric-value" id="stat-templates-count">0 Saved</div>
+          <div class="metric-trend neutral"><span>─</span> No change</div>
         </div>
       </div>
 
-      <!-- ========================================================
-           TAB 2: API KEYS MANAGER
-           ======================================================== -->
-      <div id="tab-api-keys" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                Platform API Keys Hub
-              </h2>
-              <p>Generate and manage secure API keys to connect Android Apps, Websites, CRM systems, and microservices.</p>
-            </div>
-            <button type="button" id="btn-open-create-key" class="btn-primary">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              Create API Key
+      <!-- Quick Actions -->
+      <div class="dashboard-grid">
+        <div class="card wide">
+          <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+          </div>
+          <div class="action-grid">
+            <button class="action-btn" data-action="switch-tab" data-target-tab="send-otp" title="Send a new OTP">
+              <span class="action-icon">✉️</span>
+              <span class="action-text">Send OTP</span>
+            </button>
+            <button class="action-btn" data-action="switch-tab" data-target-tab="verify-otp" title="Verify a passcode">
+              <span class="action-icon">🔑</span>
+              <span class="action-text">Verify OTP</span>
+            </button>
+            <button class="action-btn" data-action="switch-tab" data-target-tab="sms-send" title="Send a direct SMS">
+              <span class="action-icon">💬</span>
+              <span class="action-text">Direct SMS</span>
+            </button>
+            <button class="action-btn" data-action="switch-tab" data-target-tab="bulk-sms" title="Broadcast bulk SMS">
+              <span class="action-icon">📣</span>
+              <span class="action-text">Bulk SMS</span>
+            </button>
+            <button class="action-btn" data-action="switch-tab" data-target-tab="gateways" title="Manage gateways">
+              <span class="action-icon">🌐</span>
+              <span class="action-text">Gateways</span>
+            </button>
+            <button class="action-btn" data-action="switch-tab" data-target-tab="api-keys" title="Manage API keys">
+              <span class="action-icon">🔑</span>
+              <span class="action-text">API Keys</span>
             </button>
           </div>
+        </div>
 
-          <!-- Create Key Inline Form (collapsible) -->
-          <div id="create-key-container" class="create-key-panel hidden">
-            <h4>Generate New Platform API Key</h4>
-            <div class="form-grid-2" style="margin-top: 0.75rem;">
-              <div class="form-group">
-                <label for="new-key-name-input" class="form-label">Client / App Name</label>
-                <input type="text" id="new-key-name-input" class="form-input" placeholder="e.g. Android Customer App Production, Shopify Webhook, Staging Server">
-              </div>
-              <div class="form-group" style="display: flex; align-items: flex-end; gap: 0.5rem;">
-                <button type="button" id="btn-confirm-create-key" class="btn-primary" style="flex: 1;">Generate &amp; Save Key</button>
-                <button type="button" id="btn-cancel-create-key" class="btn-secondary">Cancel</button>
-              </div>
-            </div>
+        <div class="card narrow">
+          <div class="card-header">
+            <h3 class="card-title">Activity Chart</h3>
           </div>
-
-          <!-- API Keys Table -->
-          <div class="logs-table-wrapper" style="margin-top: 1rem;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>App / Client Label</th>
-                  <th>Secret API Key</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th>Requests</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="api-keys-table-body">
-                <!-- Dynamically populated via JS -->
-              </tbody>
-            </table>
-          </div>
-
-          <!-- API Authentication Documentation Banner -->
-          <div class="info-banner-box" style="margin-top: 1.5rem;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            <div>
-              <strong>How to Authenticate External Calls:</strong>
-              <p style="font-size: 0.825rem; margin-top: 0.35rem; color: var(--text-secondary); line-height: 1.5;">
-                Pass your key in HTTP requests using either header: <code>x-api-key: sk_live_...</code> or <code>Authorization: Bearer sk_live_...</code>. 
-                Keep secret keys secure on your backend or inside Android Proguard-obfuscated clients.
-              </p>
-            </div>
+          <div class="chart-wrapper">
+            <canvas id="dashboard-activity-chart" width="400" height="200"></canvas>
           </div>
         </div>
       </div>
 
-      <!-- ========================================================
-           TAB 3: SMS TEMPLATES ENGINE
-           ======================================================== -->
-      <div id="tab-templates" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                SMS &amp; OTP Template Engine
-              </h2>
-              <p>Configure dynamic message templates with placeholders for authentication, 2FA, alerts, and promotional broadcasts.</p>
-            </div>
-            <button type="button" id="btn-open-create-tpl" class="btn-primary">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              Create Template
-            </button>
+      <!-- Recent Activity -->
+      <div class="dashboard-grid">
+        <div class="card wide">
+          <div class="card-header">
+            <h3 class="card-title">Recent Activity</h3>
+            <a href="#" class="card-link" data-action="switch-tab" data-target-tab="logs">View all logs →</a>
           </div>
-
-          <!-- Template Creation / Editing Panel -->
-          <div id="template-editor-panel" class="create-key-panel hidden">
-            <h4 id="template-editor-title">Create New SMS Template</h4>
-            
-            <div class="form-grid-2" style="margin-top: 0.75rem;">
-              <div class="form-group">
-                <label for="tpl-name-input" class="form-label">Template Title</label>
-                <input type="text" id="tpl-name-input" class="form-input" placeholder="e.g. User Login Verification, Order Confirmation">
-              </div>
-
-              <div class="form-group">
-                <label for="tpl-category-select" class="form-label">Category</label>
-                <select id="tpl-category-select" class="form-select">
-                  <option value="AUTH">Authentication (OTP)</option>
-                  <option value="SECURITY">Security / Password Reset</option>
-                  <option value="FINANCE">Financial / Transaction 2FA</option>
-                  <option value="MARKETING">Promotional / Notification</option>
-                  <option value="CUSTOM">Custom Transactional</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Dynamic Placeholder Chips -->
-            <div class="form-group">
-              <label class="form-label">Insert Dynamic Tags (Click to insert into message):</label>
-              <div class="variable-chips-row">
-                <button type="button" class="var-chip" data-var="{{otp}}"><code>{{otp}}</code> Passcode</button>
-                <button type="button" class="var-chip" data-var="{{expiry}}"><code>{{expiry}}</code> Minutes</button>
-                <button type="button" class="var-chip" data-var="{{app_name}}"><code>{{app_name}}</code> App Name</button>
-                <button type="button" class="var-chip" data-var="{{name}}"><code>{{name}}</code> Customer Name</button>
-                <button type="button" class="var-chip" data-var="{{phone}}"><code>{{phone}}</code> Phone Number</button>
-                <button type="button" class="var-chip" data-var="{{amount}}"><code>{{amount}}</code> Amount</button>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="tpl-text-input" class="form-label">Message Content</label>
-              <textarea id="tpl-text-input" class="form-textarea" rows="3" placeholder="Type your template text here..."></textarea>
-              <div class="tpl-meta-counter">
-                <span id="tpl-char-count">0 characters</span> • <span id="tpl-parts-count">1 SMS part (GSM 7-bit)</span>
-              </div>
-            </div>
-
-            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-              <button type="button" id="btn-save-template" class="btn-primary" style="flex: 1;">Save Template</button>
-              <button type="button" id="btn-cancel-template" class="btn-secondary">Cancel</button>
-            </div>
-          </div>
-
-          <!-- Templates Grid List -->
-          <div id="templates-cards-grid" class="templates-grid" style="margin-top: 1.25rem;">
-            <!-- Dynamically populated via JS -->
+          <div class="table-container" id="dashboard-recent-logs">
+            <div class="empty-state"><span class="empty-icon">📭</span><p>No activity yet. Send an OTP or SMS to see logs here.</p></div>
           </div>
         </div>
       </div>
-
-      <!-- ========================================================
-           TAB 4: SEND VERIFICATION OTP
-           ======================================================== -->
-      <div id="tab-send-otp" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                Send Verification OTP
-              </h2>
-              <p>Dispatch a cryptographically secure one-time passcode using httpSMS</p>
-            </div>
-            <span id="gateway-status-pill" class="pill-live">Live Gateway: +918290866520</span>
-          </div>
-
-          <form id="send-otp-form">
-            <!-- Recipient Phone Number -->
-            <div class="form-group">
-              <label for="otp-phone-input" class="form-label">Recipient Mobile Number (Indian or International)</label>
-              <div class="form-input-wrapper has-icon-left">
-                <span class="input-icon-left">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                </span>
-                <input type="tel" id="otp-phone-input" class="form-input" placeholder="e.g. 9876543210 or +919876543210" value="" required autofocus>
-              </div>
-              <div id="phone-normalized-indicator" style="font-size: 0.775rem; margin-top: 0.35rem; font-family: var(--font-mono);"></div>
-              <div class="input-hint">Type any 10-digit number (e.g. 9876543210) — country code (+91) will be applied automatically!</div>
-              
-              <!-- Quick Test Presets -->
-              <div class="quick-presets-row">
-                <span class="quick-preset-label">Quick Test Presets:</span>
-                <button type="button" class="quick-num-btn" data-phone="+918290866520">Gateway Phone (+91 82908-66520)</button>
-                <button type="button" class="quick-num-btn" data-phone="9876543210">Demo Recipient (9876543210)</button>
-              </div>
-            </div>
-
-            <!-- Template Selector Dropdown -->
-            <div class="form-group">
-              <label for="otp-template-selector" class="form-label">Select SMS Template</label>
-              <select id="otp-template-selector" class="form-select">
-                <!-- Dynamically populated from templates -->
-              </select>
-            </div>
-
-            <!-- Parameters Grid: Length, Type, Expiry -->
-            <div class="form-grid-3">
-              <div class="form-group">
-                <label for="otp-length-select" class="form-label">Code Length</label>
-                <select id="otp-length-select" class="form-select">
-                  <option value="4">4 Digits (Short)</option>
-                  <option value="6" selected>6 Digits (Standard)</option>
-                  <option value="8">8 Digits (High Security)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="otp-type-select" class="form-label">Character Set</label>
-                <select id="otp-type-select" class="form-select">
-                  <option value="numeric" selected>Numeric (0-9)</option>
-                  <option value="alphanumeric">Alphanumeric (A-Z, 2-9)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="otp-expiry-select" class="form-label">Expiry (TTL)</label>
-                <select id="otp-expiry-select" class="form-select">
-                  <option value="1">1 Minute</option>
-                  <option value="3">3 Minutes</option>
-                  <option value="5" selected>5 Minutes</option>
-                  <option value="10">10 Minutes</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Custom Message Template Editor -->
-            <div class="form-group">
-              <label for="otp-template-input" class="form-label">SMS Message Template</label>
-              <textarea id="otp-template-input" class="form-textarea" rows="2">Your login verification code for {{app_name}} is {{otp}}. Valid for {{expiry}} minutes. Do not share this code.</textarea>
-              <div class="input-hint">Tags supported: <code>{{otp}}</code>, <code>{{expiry}}</code>, <code>{{app_name}}</code>, <code>{{phone}}</code></div>
-            </div>
-
-            <!-- Live Template Preview Box -->
-            <div class="preview-card">
-              <div class="preview-label">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                Real-Time SMS Preview
-              </div>
-              <div id="template-live-preview" class="preview-content">Your login verification code for OmniOTP is 123456. Valid for 5 minutes. Do not share this code.</div>
-            </div>
-
-            <!-- Submit Button -->
-            <div style="margin-top: 1.5rem;">
-              <button type="submit" id="btn-send-otp" class="btn-primary">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                Send Verification OTP
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- ========================================================
-           TAB 5: VERIFY PASSCODE
-           ======================================================== -->
-      <div id="tab-verify-otp" class="tab-panel">
-        <div class="glass-card">
-          <div class="verify-container">
-            
-            <!-- Radial Expiry Timer Ring -->
-            <div class="verify-badge-ring">
-              <svg width="88" height="88" class="verify-svg-timer">
-                <circle cx="44" cy="44" r="40" class="timer-bg-circle"></circle>
-                <circle id="countdown-svg-circle" cx="44" cy="44" r="40" class="timer-progress-circle"></circle>
-              </svg>
-              <div class="timer-center-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-              </div>
-            </div>
-
-            <h2 class="verify-title">Verify Mobile OTP</h2>
-            <p class="verify-subtitle">Enter the verification passcode sent via SMS to <span id="verify-target-phone" class="verify-target-number">+91 XXXXX XXXXX</span></p>
-
-            <!-- Dynamic OTP Digit Boxes -->
-            <div id="otp-digits-container" class="otp-boxes-wrapper">
-              <!-- Dynamically populated via JS -->
-            </div>
-
-            <!-- Countdown Timer & Resend Controls -->
-            <div class="verify-meta-row">
-              <div class="countdown-display">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                Expires in: <strong id="verify-countdown-text">05:00</strong>
-              </div>
-
-              <button type="button" id="btn-resend-otp" class="btn-secondary" title="Resend code if expired or not received">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                Resend OTP
-              </button>
-            </div>
-
-            <!-- Verify Action Button -->
-            <div style="width: 100%; max-width: 440px;">
-              <button type="button" id="btn-verify-otp" class="btn-primary">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Verify Passcode
-              </button>
-            </div>
-
-            <!-- Verification Status Banner -->
-            <div id="verify-result-banner" class="verify-status-banner hidden"></div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- ========================================================
-           TAB 6: QUICK DIRECT SMS
-           ======================================================== -->
-      <div id="tab-direct-sms" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                Quick SMS Dispatcher
-              </h2>
-              <p>Send standard transactional alerts, customer notifications, or test messages via httpSMS</p>
-            </div>
-          </div>
-
-          <form id="direct-sms-form">
-            <div class="form-group">
-              <label for="direct-sms-to" class="form-label">Recipient Mobile Number</label>
-              <div class="form-input-wrapper has-icon-left">
-                <span class="input-icon-left">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                </span>
-                <input type="tel" id="direct-sms-to" class="form-input" placeholder="e.g. 9876543210 or +919876543210" value="" required>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="direct-sms-content" class="form-label">Message Text</label>
-              <textarea id="direct-sms-content" class="form-textarea" rows="3" placeholder="Type your custom SMS message here..." required>Hello! This is a test notification dispatched from our OmniOTP Cloud platform.</textarea>
-              <div class="tpl-meta-counter">
-                <span id="direct-char-count">77 characters</span> • <span id="direct-parts-count">1 SMS</span>
-              </div>
-            </div>
-
-            <div style="margin-top: 1.5rem;">
-              <button type="submit" id="btn-send-direct-sms" class="btn-primary">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                Dispatch Custom SMS
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- ========================================================
-           TAB 7: BULK SMS BROADCAST ENGINE
-           ======================================================== -->
-      <div id="tab-bulk-sms" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                Bulk SMS Broadcast Engine
-              </h2>
-              <p>Dispatch high-volume SMS announcements, campaign alerts, or reminders to multiple mobile numbers.</p>
-            </div>
-            <span class="pill-live" id="bulk-queue-pill">Ready to Queue</span>
-          </div>
-
-          <form id="bulk-sms-form">
-            <!-- Recipients Input -->
-            <div class="form-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <label for="bulk-recipients-input" class="form-label" style="margin: 0;">Recipient Mobile Numbers (Comma, space, or newline separated)</label>
-                <div class="file-upload-wrapper">
-                  <label for="bulk-file-input" class="file-upload-btn">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    Import CSV / TXT
-                  </label>
-                  <input type="file" id="bulk-file-input" accept=".csv,.txt" style="display: none;">
-                </div>
-              </div>
-
-              <textarea id="bulk-recipients-input" class="form-textarea" rows="4" placeholder="+918290866520, 9876543210, 9123456789, +18005550199"></textarea>
-              
-              <div class="bulk-stats-row">
-                <span id="bulk-valid-count" class="badge-tag">0 valid recipients detected</span>
-                <span id="bulk-dupes-count" class="badge-tag-muted">0 duplicates</span>
-              </div>
-            </div>
-
-            <!-- Message Content -->
-            <div class="form-group">
-              <label for="bulk-message-content" class="form-label">Broadcast Message Content</label>
-              <textarea id="bulk-message-content" class="form-textarea" rows="3" placeholder="Type your broadcast message... (e.g. Special festival offer for our members! Use coupon FEST25 for 25% off.)"></textarea>
-            </div>
-
-            <!-- Throttle Delay Controls -->
-            <div class="form-grid-2">
-              <div class="form-group">
-                <label for="bulk-delay-select" class="form-label">Dispatch Delay Between SMS (SIM Protection)</label>
-                <select id="bulk-delay-select" class="form-select">
-                  <option value="500">0.5 Seconds (Fast)</option>
-                  <option value="1000" selected>1.0 Second (Recommended)</option>
-                  <option value="2000">2.0 Seconds (Carrier Safe)</option>
-                  <option value="3000">3.0 Seconds (Anti-Spam)</option>
-                </select>
-                <div class="input-hint">Pacing SMS prevents cellular carrier spam filters from throttling your Android SIM card.</div>
-              </div>
-
-              <div class="form-group" style="display: flex; align-items: flex-end;">
-                <button type="submit" id="btn-start-bulk" class="btn-primary" style="width: 100%;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  Launch Bulk SMS Broadcast
-                </button>
-              </div>
-            </div>
-
-            <!-- Bulk Progress Bar & Real-time Delivery Monitor -->
-            <div id="bulk-progress-card" class="bulk-progress-panel hidden">
-              <div class="bulk-progress-header">
-                <div>
-                  <h4 id="bulk-status-heading">Broadcasting Messages...</h4>
-                  <p id="bulk-status-sub">Sent <span id="bulk-progress-current">0</span> of <span id="bulk-progress-total">0</span></p>
-                </div>
-                <div class="bulk-action-buttons">
-                  <button type="button" id="btn-pause-bulk" class="btn-secondary">Pause</button>
-                  <button type="button" id="btn-cancel-bulk" class="btn-secondary danger">Cancel</button>
-                </div>
-              </div>
-
-              <!-- Animated Progress Bar -->
-              <div class="progress-bar-track">
-                <div id="bulk-progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
-              </div>
-
-              <div id="bulk-results-log" class="bulk-results-stream">
-                <!-- Stream of dispatched logs -->
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- ========================================================
-           TAB 8: LIVE INTERACTIVE API PLAYGROUND
-           ======================================================== -->
-      <div id="tab-api-playground" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                Live Interactive API Playground
-              </h2>
-              <p>Test the Universal OTP and SMS REST API endpoints directly in your browser with live HTTP execution.</p>
-            </div>
-            <button type="button" id="btn-execute-api-playground" class="btn-primary">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              Send Live Request
-            </button>
-          </div>
-
-          <!-- Playground Request Configuration -->
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label for="playground-endpoint-select" class="form-label">Select API Endpoint</label>
-              <select id="playground-endpoint-select" class="form-select">
-                <option value="SEND_OTP" selected>POST /api/v1/otp/send (Dispatch OTP)</option>
-                <option value="VERIFY_OTP">POST /api/v1/otp/verify (Verify OTP Code)</option>
-                <option value="SEND_SMS">POST /api/v1/sms/send (Direct SMS)</option>
-                <option value="BULK_SMS">POST /api/v1/sms/bulk (Bulk Dispatch)</option>
-                <option value="HEALTH">GET /api/v1/health (Health Check)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="playground-key-select" class="form-label">Authenticate As (Platform API Key)</label>
-              <select id="playground-key-select" class="form-select">
-                <!-- Dynamically populated from API Keys -->
-              </select>
-            </div>
-          </div>
-
-          <!-- JSON Request Payload Editor -->
-          <div class="form-group">
-            <label for="playground-json-input" class="form-label">Request Body (JSON)</label>
-            <textarea id="playground-json-input" class="form-textarea code-font" rows="7">{
-  "phone": "+918290866520",
-  "app_name": "OmniOTP Demo",
-  "length": 6,
-  "expiry_minutes": 5
-}</textarea>
-          </div>
-
-          <!-- Live Response Inspector -->
-          <div class="playground-response-card">
-            <div class="response-header-bar">
-              <div class="response-title">
-                <span>Response Output</span>
-                <span id="playground-status-badge" class="badge-tag">Ready</span>
-                <span id="playground-latency-badge" class="badge-tag-muted">-- ms</span>
-              </div>
-              <button type="button" id="btn-copy-playground-res" class="btn-copy-code">Copy Response</button>
-            </div>
-            <pre class="code-pre-box"><code id="playground-response-code">Press "Send Live Request" to inspect raw API response...</code></pre>
-          </div>
-        </div>
-      </div>
-
-      <!-- ========================================================
-           TAB 9: SDKs, ANDROID & WEB DROP-IN TEMPLATES
-           ======================================================== -->
-      <div id="tab-integration" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                Developer SDKs &amp; Drop-In Templates
-              </h2>
-              <p>Ready-to-use code templates to integrate OmniOTP into Android Apps, Websites, and Backend servers.</p>
-            </div>
-          </div>
-
-          <!-- Sub-tab pill selector -->
-          <div class="integration-subtabs">
-            <button type="button" class="subtab-btn active" data-subtab="android">📱 Android App (Kotlin &amp; Java)</button>
-            <button type="button" class="subtab-btn" data-subtab="web">🌐 Website Drop-In Widget</button>
-            <button type="button" class="subtab-btn" data-subtab="backend">💻 Backend SDKs (Node, Python, PHP)</button>
-            <button type="button" class="subtab-btn" data-subtab="servers">🚀 Deployable Server Scripts</button>
-          </div>
-
-          <!-- SUBTAB 1: ANDROID APP TEMPLATE -->
-          <div id="subtab-content-android" class="subtab-panel active">
-            <div class="card-section-title">
-              <h3>Complete Android Studio Integration</h3>
-              <span>Drop into any Android App to get instant SMS OTP Login!</span>
-            </div>
-
-            <div class="code-generator-wrapper">
-              <div class="code-header-bar">
-                <span class="code-filename">OtpApiService.kt (Retrofit Interface)</span>
-                <button type="button" class="btn-copy-code" data-copy-target="android-service-code">Copy Kotlin</button>
-              </div>
-              <pre class="code-pre-box"><code id="android-service-code">// Step 1: Add Retrofit to app/build.gradle:
-// implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-// implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-
-package com.example.omniotp
-
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.Header
-import retrofit2.http.POST
-
-data class SendOtpRequest(val phone: String, val length: Int = 6, val app_name: String = "My App")
-data class SendOtpResponse(val success: Boolean, val session_id: String?, val message: String?, val error: String?)
-data class VerifyOtpRequest(val session_id: String, val otp: String)
-data class VerifyOtpResponse(val success: Boolean, val verified: Boolean, val message: String?, val error: String?)
-
-interface OtpApiService {
-    @POST("api/v1/otp/send")
-    suspend fun sendOtp(@Header("x-api-key") apiKey: String, @Body request: SendOtpRequest): Response&lt;SendOtpResponse&gt;
-
-    @POST("api/v1/otp/verify")
-    suspend fun verifyOtp(@Header("x-api-key") apiKey: String, @Body request: VerifyOtpRequest): Response&lt;VerifyOtpResponse&gt;
-
-    companion object {
-        fun create(): OtpApiService = Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:5000/") // Change to your public server or Cloudflare URL
-            .addConverterFactory(GsonConverterFactory.create())
-            .build().create(OtpApiService::class.java)
-    }
-}</code></pre>
-            </div>
-
-            <div class="code-generator-wrapper" style="margin-top: 1rem;">
-              <div class="code-header-bar">
-                <span class="code-filename">OtpVerificationActivity.kt (Complete Logic)</span>
-                <button type="button" class="btn-copy-code" data-copy-target="android-activity-code">Copy Activity</button>
-              </div>
-              <pre class="code-pre-box"><code id="android-activity-code">// Dispatch OTP & Verify in Kotlin Activity:
-val apiKey = "sk_live_omni_7a9f4c82b1d3e6"
-val api = OtpApiService.create()
-
-// 1. Send OTP
-lifecycleScope.launch {
-    val res = api.sendOtp(apiKey, SendOtpRequest(phone = "+919876543210", app_name = "My Android App"))
-    if (res.isSuccessful && res.body()?.success == true) {
-        val sessionId = res.body()?.session_id
-        Toast.makeText(this@OtpActivity, "OTP sent to your phone!", Toast.LENGTH_SHORT).show()
-    }
-}
-
-// 2. Verify Code
-lifecycleScope.launch {
-    val res = api.verifyOtp(apiKey, VerifyOtpRequest(session_id = sessionId!!, otp = "123456"))
-    if (res.isSuccessful && res.body()?.verified == true) {
-        Toast.makeText(this@OtpActivity, "Phone Verified Successfully!", Toast.LENGTH_LONG).show()
-    }
-}</code></pre>
-            </div>
-          </div>
-
-          <!-- SUBTAB 2: WEBSITE DROP-IN WIDGET -->
-          <div id="subtab-content-web" class="subtab-panel">
-            <div class="card-section-title">
-              <h3>Drop-In Website OTP Login Modal</h3>
-              <span>Works on WordPress, React, Next.js, PHP, or any HTML website.</span>
-            </div>
-
-            <div class="code-generator-wrapper">
-              <div class="code-header-bar">
-                <span class="code-filename">otp-widget.html (Copy-Paste Drop-In Component)</span>
-                <button type="button" class="btn-copy-code" data-copy-target="web-widget-code">Copy HTML/JS</button>
-              </div>
-              <pre class="code-pre-box"><code id="web-widget-code">&lt;!-- OmniOTP Drop-In Website Widget --&gt;
-&lt;div id="omni-otp-box" style="max-width:380px; padding:24px; background:#0d1424; color:#fff; border-radius:12px;"&gt;
-  &lt;h3&gt;Mobile Login&lt;/h3&gt;
-  &lt;input type="tel" id="user-phone" placeholder="Enter mobile number" style="width:100%; padding:10px; margin:8px 0;"&gt;
-  &lt;button id="btn-send-code" onclick="sendMobileOTP()" style="width:100%; padding:10px; background:#00d2ff; font-weight:bold;"&gt;Send OTP&lt;/button&gt;
-  
-  &lt;div id="verify-area" style="display:none; margin-top:16px;"&gt;
-    &lt;input type="text" id="user-code" placeholder="Enter 6-digit OTP" style="width:100%; padding:10px;"&gt;
-    &lt;button onclick="verifyMobileOTP()" style="width:100%; padding:10px; background:#10b981; color:#fff; margin-top:8px;"&gt;Verify &amp; Sign In&lt;/button&gt;
-  &lt;/div&gt;
-&lt;/div&gt;
-
-&lt;script&gt;
-const API_URL = "http://localhost:5000"; // Or your Cloudflare Worker URL
-const API_KEY = "sk_live_omni_7a9f4c82b1d3e6";
-let activeSession = null;
-
-async function sendMobileOTP() {
-  const phone = document.getElementById('user-phone').value;
-  const res = await fetch(`${API_URL}/api/v1/otp/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
-    body: JSON.stringify({ phone, app_name: 'My Website' })
-  });
-  const data = await res.json();
-  if (data.success) {
-    activeSession = data.session_id;
-    document.getElementById('verify-area').style.display = 'block';
-    alert('OTP sent via SMS!');
-  }
-}
-
-async function verifyMobileOTP() {
-  const otp = document.getElementById('user-code').value;
-  const res = await fetch(`${API_URL}/api/v1/otp/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
-    body: JSON.stringify({ session_id: activeSession, otp })
-  });
-  const data = await res.json();
-  if (data.verified) alert('Verification successful! Logged in.');
-  else alert('Invalid OTP code');
-}
-&lt;/script&gt;</code></pre>
-            </div>
-          </div>
-
-          <!-- SUBTAB 3: BACKEND SDKs -->
-          <div id="subtab-content-backend" class="subtab-panel">
-            <div class="code-lang-selector" style="margin-bottom: 1rem;">
-              <button type="button" class="code-lang-btn active" data-lang="curl">cURL</button>
-              <button type="button" class="code-lang-btn" data-lang="node">Node.js</button>
-              <button type="button" class="code-lang-btn" data-lang="python">Python</button>
-              <button type="button" class="code-lang-btn" data-lang="php">PHP</button>
-              <button type="button" class="code-lang-btn" data-lang="flutter">Flutter / Dart</button>
-            </div>
-
-            <div class="code-generator-wrapper">
-              <div class="code-header-bar">
-                <span class="code-filename" id="backend-snippet-title">cURL Terminal Command</span>
-                <button type="button" class="btn-copy-code" id="btn-copy-backend-snippet">Copy Code</button>
-              </div>
-              <pre class="code-pre-box"><code id="backend-snippet-code">curl -X POST "http://localhost:5000/api/v1/otp/send" \
-  -H "x-api-key: sk_live_omni_7a9f4c82b1d3e6" \
-  -H "Content-Type: application/json" \
-  -d '{"phone": "+918290866520", "app_name": "OmniOTP", "expiry_minutes": 5}'</code></pre>
-            </div>
-          </div>
-
-          <!-- SUBTAB 4: DEPLOYABLE SERVER SCRIPTS -->
-          <div id="subtab-content-servers" class="subtab-panel">
-            <div class="card-section-title">
-              <h3>Deployable Backend Server Scripts Included</h3>
-              <span>Choose your preferred deployment target to host the Universal OTP Gateway:</span>
-            </div>
-
-            <div class="health-status-grid">
-              <div class="health-card">
-                <div class="health-card-content">
-                  <strong>1. Windows Native Server</strong>
-                  <p><code>api-server.ps1</code> — Runs natively on Windows with 1-click without installing Node or Python!</p>
-                  <pre class="mini-code">powershell -ExecutionPolicy Bypass -File .\api-server.ps1</pre>
-                </div>
-              </div>
-
-              <div class="health-card">
-                <div class="health-card-content">
-                  <strong>2. Cloudflare Worker (100% Free Worldwide)</strong>
-                  <p><code>cloudflare-worker.js</code> — 1-click free serverless deployment. Get a public 24/7 HTTPS URL!</p>
-                  <pre class="mini-code">Deploy in Cloudflare Dashboard in 2 minutes</pre>
-                </div>
-              </div>
-
-              <div class="health-card">
-                <div class="health-card-content">
-                  <strong>3. Node.js Express Server</strong>
-                  <p><code>server.js</code> + <code>package.json</code> — Ideal for Linux VPS, Render, Railway, or Heroku.</p>
-                  <pre class="mini-code">npm install &amp;&amp; npm start</pre>
-                </div>
-              </div>
-
-              <div class="health-card">
-                <div class="health-card-content">
-                  <strong>4. PHP Gateway</strong>
-                  <p><code>api.php</code> — Upload to standard cPanel, Apache, or Nginx shared web hosting.</p>
-                  <pre class="mini-code">Upload api.php to public_html</pre>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- ========================================================
-           TAB 10: AUDIT & DISPATCH LOGS
-           ======================================================== -->
-      <div id="tab-logs" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                Dispatch &amp; Verification Audit Logs
-              </h2>
-              <p>Real-time audit history of all OTP requests, delivery confirmations, and validation attempts</p>
-            </div>
-          </div>
-
-          <div class="table-controls-bar">
-            <div class="table-filter-group">
-              <label for="logs-filter-status" class="form-label" style="margin: 0;">Status Filter:</label>
-              <select id="logs-filter-status" class="form-select" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                <option value="ALL">All Records</option>
-                <option value="SENT">Sent</option>
-                <option value="VERIFIED">Verified</option>
-                <option value="INCORRECT">Incorrect</option>
-                <option value="EXPIRED">Expired</option>
-                <option value="EXHAUSTED">Locked</option>
-                <option value="FAILED">Failed</option>
-              </select>
-            </div>
-
-            <div class="table-actions-group">
-              <button type="button" id="btn-export-logs" class="btn-secondary" title="Export as JSON">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                Export JSON
-              </button>
-              <button type="button" id="btn-export-csv" class="btn-secondary" title="Export as CSV">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                Export CSV
-              </button>
-              <button type="button" id="btn-clear-logs" class="btn-secondary" title="Clear table history">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                Clear
-              </button>
-            </div>
-          </div>
-
-          <div class="logs-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Type &amp; Channel</th>
-                  <th>Recipient Phone</th>
-                  <th>Status</th>
-                  <th>Code</th>
-                  <th>Latency</th>
-                  <th>Details</th>
-                </tr>
-              </thead>
-              <tbody id="logs-table-body">
-                <!-- Dynamically populated via JS -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ========================================================
-           TAB 11: GATEWAY & BACKEND SETTINGS
-           ======================================================== -->
-      <div id="tab-settings" class="tab-panel">
-        <div class="glass-card">
-          <div class="card-header-bar">
-            <div class="card-title-group">
-              <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-cyan)" stroke-width="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                Gateway Credentials &amp; Backend Routing
-              </h2>
-              <p>Configure your httpSMS credentials, Android gateway SIM number, and API server settings.</p>
-            </div>
-          </div>
-
-          <form id="settings-form">
-            <!-- Simulator Sandbox Toggle -->
-            <div class="toggle-switch-wrapper">
-              <div class="toggle-details">
-                <h4>Simulator / Sandbox Mode</h4>
-                <p>Simulate realistic cellular network dispatch without consuming SMS carrier quota</p>
-              </div>
-              <label class="switch-container">
-                <input type="checkbox" id="settings-sim-toggle" class="switch-input-hidden">
-                <div class="switch-slider"></div>
-              </label>
-            </div>
-
-            <!-- httpSMS API Key -->
-            <div class="form-group">
-              <label for="settings-api-key" class="form-label">httpSMS API Key (x-api-key)</label>
-              <div class="form-input-wrapper has-icon-left">
-                <span class="input-icon-left">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                </span>
-                <input type="password" id="settings-api-key" class="form-input" value="uk_wBxpD1neiGl12lD0pW736lzcEQIYasr253HFwsp4ZIE5dDB09OX8JdkZRqkMx1x7" autocomplete="off">
-                <button type="button" id="toggle-key-visibility" class="btn-secondary" style="position: absolute; right: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem;">Show</button>
-              </div>
-              <div class="input-hint">Active account: <code>senak0709@gmail.com</code>. Stored securely in your browser.</div>
-            </div>
-
-            <!-- Sender Phone Number (From) -->
-            <div class="form-group">
-              <label for="settings-from-number" class="form-label">Android Gateway Phone Number (From)</label>
-              <div class="form-input-wrapper has-icon-left">
-                <span class="input-icon-left">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                </span>
-                <input type="tel" id="settings-from-number" class="form-input" placeholder="+918290866520" value="+918290866520">
-              </div>
-              <div class="input-hint">Your registered Android SIM number on httpSMS: <code>+918290866520</code></div>
-            </div>
-
-            <!-- Backend Server URL Configuration -->
-            <div class="form-group">
-              <label for="settings-server-url" class="form-label">REST API Server Base URL (For External Apps / Playground)</label>
-              <div class="form-input-wrapper has-icon-left">
-                <span class="input-icon-left">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                </span>
-                <input type="text" id="settings-server-url" class="form-input" placeholder="http://localhost:5000" value="http://localhost:5000">
-              </div>
-              <div class="input-hint">Points to your local PowerShell server (<code>api-server.ps1</code>), Node server, or deployed Cloudflare Worker URL.</div>
-            </div>
-
-            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-              <button type="submit" class="btn-primary" style="flex: 2;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                Save Settings
-              </button>
-              <button type="button" id="btn-test-connection" class="btn-secondary" style="flex: 1;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                Test httpSMS Connection
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
     </section>
 
-    <!-- ========================================================
-         RIGHT SIDEBAR: INTERACTIVE SMARTPHONE MOCKUP VISUALIZER
-         ======================================================== -->
-    <aside class="sidebar-mockup-wrapper" id="mockup-sidebar">
-      <div class="mockup-sticky-box">
-        <div class="mockup-header-title">
-          <div class="mockup-title-text">
-            <h4>Live Device Visualizer</h4>
-            <span>Incoming Cellular SMS View</span>
+    <!-- ============ SEND OTP ============ -->
+    <section id="send-otp" class="section">
+      <div class="page-header"><h2>Send OTP</h2><p>Send a one-time passcode to any mobile number via HTTP SMS</p></div>
+      <div class="form-card">
+        <form id="send-otp-form" class="otp-form">
+          <div class="form-group">
+            <label class="form-label">Recipient Phone Number</label>
+            <div class="input-with-prefix"><span class="input-prefix">+91</span><input type="tel" id="otp-phone-input" placeholder="98765 43210" class="form-input" required maxlength="10" pattern="[0-9]*"></div>
+            <div id="phone-normalized-indicator" class="field-hint"></div>
           </div>
-          <div class="mockup-controls-top">
-            <button type="button" id="btn-toggle-sound" class="mockup-icon-btn active" title="Toggle SMS Chime Sound">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-            </button>
-            <button type="button" id="btn-clear-mockup" class="mockup-icon-btn" title="Clear Phone Messages">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg>
-            </button>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">OTP Length</label><select id="otp-length-select" class="form-select"><option value="6">6 digits</option><option value="4">4 digits</option><option value="8">8 digits</option></select></div>
+            <div class="form-group"><label class="form-label">Expiry (minutes)</label><select id="otp-expiry-select" class="form-select"><option value="5">5 minutes</option><option value="3">3 minutes</option><option value="10">10 minutes</option></select></div>
           </div>
-        </div>
-
-        <!-- Realistic Smartphone Mockup -->
-        <div class="smartphone-frame">
-          <div class="smartphone-inner">
-            
-            <!-- Status Bar & Dynamic Island -->
-            <div class="mockup-status-bar">
-              <span class="mockup-clock">09:41</span>
-              <div class="dynamic-island">
-                <span class="island-camera"></span>
-              </div>
-              <div class="mockup-status-icons">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.79-1.79C9.07 19.98 10.49 20.5 12 20.5c4.97 0 9-4.03 9-9s-4.03-9-9-9z"></path></svg>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"></path></svg>
-              </div>
-            </div>
-
-            <!-- Slide-down Push Notification Banner -->
-            <div id="phone-push-banner" class="phone-push-notification banner-hidden">
-              <div class="push-header">
-                <div class="push-app-badge">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
-                  <span>MESSAGES</span>
-                </div>
-                <span class="push-time">now</span>
-              </div>
-              <div class="push-body">
-                <strong class="push-sender">httpSMS Gateway</strong>
-                <p class="push-text">Your verification code is 123456...</p>
-                <div class="push-action-row">
-                  <span class="push-code-pill" style="display: none;">Code: 123456</span>
-                  <span class="push-autofill-hint">Tap to auto-fill code →</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Messages App Body -->
-            <div class="phone-messages-header">
-              <div class="messages-avatar">💬</div>
-              <div class="messages-contact-details">
-                <strong id="mockup-chat-contact">httpSMS Gateway</strong>
-                <span>+91 82908-66520</span>
-              </div>
-            </div>
-
-            <!-- Messages Conversation Thread -->
-            <div id="phone-chat-messages" class="phone-chat-container">
-              <div class="mockup-empty-state">
-                <div class="empty-icon-circle">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                </div>
-                <h4>Ready for Messages</h4>
-                <p>Send an OTP or SMS to see real-time delivery animation and test 1-click auto-fill.</p>
-              </div>
-            </div>
-
-            <!-- Bottom Home Indicator Bar -->
-            <div class="mockup-home-indicator"></div>
-
+          <div class="form-group">
+            <label class="form-label">Message Template (optional)</label>
+            <textarea id="otp-template-input" class="form-textarea" rows="3" placeholder="Your verification code is {{otp}}. Valid for {{expiry}} minutes."></textarea>
+            <div id="template-live-preview" class="field-hint preview"></div>
           </div>
-        </div>
+          <button type="submit" id="btn-send-otp" class="btn-primary btn-block"><span id="send-btn-text">Send Verification OTP</span><span id="send-spinner" class="spinner"></span></button>
+        </form>
+      </div>
+    </section>
 
-        <div class="mockup-footer-note">
-          <span>⚡ Simulated recipient screen with 1-click OTP auto-fill</span>
+    <!-- ============ VERIFY OTP ============ -->
+    <section id="verify-otp" class="section">
+      <div class="page-header"><h2>Verify OTP</h2><p>Enter the verification code sent to your mobile number</p></div>
+      <div class="form-card">
+        <div class="verify-layout">
+          <div class="verify-info">
+            <div class="verify-target"><span class="verify-target-label">Sending to:</span><span id="verify-target-phone" class="verify-target-value">—</span></div>
+            <div id="verify-result-banner" class="verify-banner hidden"></div>
+            <div id="otp-digits-container" class="otp-digits-row"></div>
+            <div class="verify-actions">
+              <button type="button" id="btn-verify-otp" class="btn-primary"><span id="verify-btn-text">Verify &amp; Sign In</span><span id="verify-spinner" class="spinner"></span></button>
+              <button type="button" id="btn-resend-otp" class="btn-outline">🔄 Resend OTP</button>
+            </div>
+          </div>
+          <div class="verify-timer-card">
+            <div class="timer-display"><span id="otp-timer">05:00</span></div>
+            <div class="timer-hint">Code expires in</div>
+          </div>
         </div>
       </div>
-    </aside>
+    </section>
 
+    <!-- ============ DIRECT SMS ============ -->
+    <section id="sms-send" class="section">
+      <div class="page-header"><h2>Direct SMS</h2><p>Send a custom text message to any number</p></div>
+      <div class="form-card">
+        <form id="direct-sms-form" class="otp-form">
+          <div class="form-group">
+            <label class="form-label">Recipient Phone Number</label>
+            <div class="input-with-prefix"><span class="input-prefix">+91</span><input type="tel" id="sms-phone-input" placeholder="98765 43210" class="form-input" required maxlength="10" pattern="[0-9]*"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea id="sms-message-input" class="form-textarea" rows="4" placeholder="Type your message here..."></textarea>
+            <span id="sms-char-count" class="field-hint">0 characters</span>
+          </div>
+          <button type="submit" id="btn-send-sms" class="btn-primary btn-block">Send SMS</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ BULK SMS ============ -->
+    <section id="bulk-sms" class="section">
+      <div class="page-header"><h2>Bulk SMS</h2><p>Broadcast a message to multiple recipients at once</p></div>
+      <div class="form-card">
+        <form id="bulk-sms-form" class="otp-form">
+          <div class="form-group">
+            <label class="form-label">Recipient Phone Numbers</label>
+            <textarea id="bulk-recipients-input" class="form-textarea" rows="5" placeholder="Enter phone numbers separated by commas, newlines, or spaces..."></textarea>
+            <div class="bulk-pills">
+              <span id="bulk-valid-count" class="bulk-pill bulk-pill-valid">0 valid</span>
+              <span id="bulk-dupes-count" class="bulk-pill bulk-pill-dupes">0 duplicates</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea id="bulk-message-content" class="form-textarea" rows="4" placeholder="Type your broadcast message..."></textarea>
+            <span id="bulk-char-count" class="field-hint">0 characters</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Delay between messages (ms)</label>
+              <select id="bulk-delay-select" class="form-select"><option value="1000">1 second</option><option value="2000">2 seconds</option><option value="500">500ms</option></select>
+            </div>
+          </div>
+          <button type="submit" id="btn-send-bulk-sms" class="btn-primary btn-block">Start Broadcast</button>
+        </form>
+        <div id="bulk-progress-card" class="bulk-progress-card hidden">
+          <div class="progress-label"><span id="bulk-progress-current">0</span> / <span id="bulk-progress-total">0</span> sent</div>
+          <div class="progress-track"><div id="bulk-progress-bar-fill" class="progress-fill"></div></div>
+          <div id="bulk-results-log" class="bulk-results-log"></div>
+          <div class="bulk-actions">
+            <button type="button" id="btn-pause-bulk" class="btn-outline">Pause</button>
+            <button type="button" id="btn-cancel-bulk" class="btn-outline">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUDIT LOGS ============ -->
+    <section id="logs" class="section">
+      <div class="page-header"><h2>Audit Logs</h2><p>View recent OTP and SMS activity</p></div>
+      <div class="table-container" id="logs-container"><div class="empty-state"><span class="empty-icon">📭</span><p>No logs yet. Activity will appear here.</p></div></div>
+    </section>
+
+    <!-- ============ GATEWAYS ============ -->
+    <section id="gateways" class="section">
+      <div class="page-header"><h2>Gateways</h2><p>Manage SMS gateway configurations</p></div>
+      <div class="form-card">
+        <div class="card-actions">
+          <button type="button" id="btn-open-add-gateway" class="btn-secondary">+ Add Gateway</button>
+        </div>
+        <div id="add-gateway-container" class="hidden">
+          <div class="form-group"><label class="form-label">Name</label><input type="text" id="gw-name" class="form-input" placeholder="e.g. Primary Gateway"></div>
+          <div class="form-group"><label class="form-label">From Number</label><input type="text" id="gw-from" class="form-input" placeholder="e.g. +917852081659"></div>
+          <div class="form-group"><label class="form-label">httpSMS API Key</label><input type="text" id="gw-apikey" class="form-input" placeholder="uk_..."></div>
+          <div class="form-group"><label class="form-label">Cap</label><input type="number" id="gw-cap" class="form-input" value="1000"></div>
+          <div class="form-actions">
+            <button type="button" id="btn-confirm-add-gateway" class="btn-primary">Add Gateway</button>
+            <button type="button" id="btn-cancel-add-gateway" class="btn-outline">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-container" id="gateways-container"><div class="empty-state"><span class="empty-icon">🌐</span><p>No gateways configured.</p></div></div>
+    </section>
+
+    <!-- ============ API KEYS ============ -->
+    <section id="api-keys" class="section">
+      <div class="page-header"><h2>API Keys</h2><p>Manage platform API keys for external integrations</p></div>
+      <div class="form-card">
+        <div class="card-actions">
+          <button type="button" id="btn-open-create-key" class="btn-secondary">+ Add API Key</button>
+        </div>
+        <div id="create-key-container" class="hidden">
+          <div class="form-group"><label class="form-label">Key Name</label><input type="text" id="new-key-name-input" class="form-input" placeholder="e.g. Mobile App Client"></div>
+          <div class="form-group"><label class="form-label">Existing API Key (sk_live_...)</label><input type="text" id="new-key-value-input" class="form-input" placeholder="sk_live_..."></div>
+          <div class="form-actions">
+            <button type="button" id="btn-confirm-create-key" class="btn-primary">Add Key</button>
+            <button type="button" id="btn-cancel-create-key" class="btn-outline">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="data-table" id="api-keys-table">
+          <thead>
+            <tr><th>Name</th><th>Key</th><th>Status</th><th>Created</th><th>Requests</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="api-keys-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ TEMPLATES ============ -->
+    <section id="templates" class="section">
+      <div class="page-header"><h2>SMS Templates</h2><p>Create and manage reusable SMS message templates</p></div>
+      <div class="form-card">
+        <div class="card-actions">
+          <button type="button" id="btn-open-create-tpl" class="btn-secondary">+ Create Template</button>
+        </div>
+        <div id="template-editor-panel" class="hidden">
+          <div class="form-group"><label class="form-label">Template Name</label><input type="text" id="tpl-name-input" class="form-input" placeholder="e.g. Login OTP"></div>
+          <div class="form-group"><label class="form-label">Category</label><select id="tpl-category-select" class="form-select"><option value="AUTH">Auth</option><option value="SECURITY">Security</option><option value="FINANCE">Finance</option><option value="MARKETING">Marketing</option><option value="CUSTOM">Custom</option></select></div>
+          <div class="form-group"><label class="form-label">Template Text</label><textarea id="tpl-text-input" class="form-textarea" rows="4" placeholder="Your code is {{otp}}. Valid for {{expiry}} minutes."></textarea>
+            <div class="var-chips">
+              <span class="var-chip" data-var="{{otp}}">{{otp}}</span>
+              <span class="var-chip" data-var="{{expiry}}">{{expiry}}</span>
+              <span class="var-chip" data-var="{{app_name}}">{{app_name}}</span>
+              <span class="var-chip" data-var="{{name}}">{{name}}</span>
+              <span class="var-chip" data-var="{{phone}}">{{phone}}</span>
+            </div>
+            <span id="tpl-char-count" class="field-hint">0 characters</span>
+            <span id="tpl-parts-count" class="field-hint">1 SMS part</span>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="btn-save-template" class="btn-primary">Save Template</button>
+            <button type="button" id="btn-cancel-template" class="btn-outline">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="templates-cards-grid" id="templates-cards-grid"></div>
+    </section>
+
+    <!-- ============ API PLAYGROUND ============ -->
+    <section id="playground" class="section">
+      <div class="page-header"><h2>API Playground</h2><p>Test OmniOTP REST API endpoints live</p></div>
+      <div class="form-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Endpoint</label>
+            <select id="playground-endpoint-select" class="form-select">
+              <option value="SEND_OTP">Send OTP</option>
+              <option value="VERIFY_OTP">Verify OTP</option>
+              <option value="SEND_SMS">Send SMS</option>
+              <option value="BULK_SMS">Bulk SMS</option>
+              <option value="HEALTH">Health Check</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <select id="playground-key-select" class="form-select"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Request Body (JSON)</label>
+          <textarea id="playground-json-input" class="form-textarea form-mono" rows="6" placeholder="{...}"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="btn-execute-api-playground" class="btn-primary">Execute Request</button>
+          <button type="button" id="btn-copy-playground-res" class="btn-outline">Copy Response</button>
+        </div>
+        <div class="playground-result">
+          <div class="playground-result-head">
+            <span id="playground-status-badge" class="badge badge-neutral">—</span>
+            <span id="playground-latency-badge" class="badge badge-neutral">— ms</span>
+          </div>
+          <pre id="playground-response-code" class="code-block">...</pre>
+        </div>
+      </div>
+      <details style="margin-top:1rem;">
+        <summary style="cursor:pointer;font-weight:600;">Curl Examples</summary>
+        <pre class="code-block" style="white-space:pre-wrap;">curl -s http://localhost:5000/api/v1/health
+curl -s -X POST http://localhost:5000/api/v1/otp/send -H "Content-Type: application/json" -H "x-api-key: sk_live_change_me_in_production" -d '{"phone":"+919876543210","length":6}'
+curl -s -X POST http://localhost:5000/api/v1/sms/send -H "Content-Type: application/json" -H "x-api-key: sk_live_change_me_in_production" -d '{"phone":"+919876543210","message":"Hello"}'</pre>
+      </details>
+    </section>
+    <section id="settings" class="section">
+      <div class="page-header"><h2>Settings</h2><p>Platform configuration and preferences</p></div>
+      <div class="form-card settings-grid">
+        <div class="settings-group">
+          <h4 class="settings-group-title">Server</h4>
+          <div class="form-group"><label class="form-label">API Base URL</label><input type="text" id="settings-server-url" class="form-input" value="http://localhost:5000"></div>
+          <div class="form-group"><label class="form-label">httpSMS From Number</label><input type="text" id="settings-from-number" class="form-input" value="7852081659"></div>
+          <div class="form-group"><label class="form-label">Default Country Code</label><select id="settings-default-cc" class="form-select"><option value="+91">+91 India</option><option value="+1">+1 USA/Canada</option><option value="+44">+44 UK</option></select></div>
+        </div>
+        <div class="settings-group">
+          <h4 class="settings-group-title">OTP Defaults</h4>
+          <div class="form-group"><label class="form-label">Default OTP Length</label><select id="settings-otp-length" class="form-select"><option value="6">6 digits</option><option value="4">4 digits</option><option value="8">8 digits</option></select></div>
+          <div class="form-group"><label class="form-label">Default Expiry (minutes)</label><select id="settings-otp-expiry" class="form-select"><option value="5">5 minutes</option><option value="3">3 minutes</option><option value="10">10 minutes</option></select></div>
+          <div class="form-group"><label class="form-label">Max Attempts</label><select id="settings-otp-attempts" class="form-select"><option value="3">3 attempts</option><option value="5">5 attempts</option></select></div>
+        </div>
+        <div class="settings-group">
+          <h4 class="settings-group-title">Appearance</h4>
+          <div class="form-group toggle-row"><label class="form-label">Sound Effects</label><button type="button" class="toggle-switch" id="toggle-sound"></button></div>
+          <div class="form-group toggle-row"><label class="form-label">Compact Mode</label><button type="button" class="toggle-switch" id="toggle-compact"></button></div>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="btn-save-settings" class="btn-primary">Save Settings</button>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <!-- Toast Notification Container -->
-  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+  <div id="toast-container" class="toast-container"></div>
 
-  <!-- Scripts -->
+  <script>
+    window.OMNI_ENV = {
+      SUPABASE_URL: 'https://hqmqeimyarxjoekwxekk.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_9v-DzAWnu4sYlzFrrm9zjA_ulU5HJAr',
+      API_BASE_URL: 'http://localhost:5000'
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/httpsms.js"></script>
   <script src="js/otp-manager.js"></script>
   <script src="js/phone-mockup.js"></script>
   <script src="js/app.js"></script>
-
 </body>
 </html>

@@ -23,9 +23,9 @@ Endpoints Provided:
 
 param(
     [int]$Port = 5000,
-    [string]$HttpSMSApiKey = "uk_wBxpD1neiGl12lD0pW736lzcEQIYasr253HFwsp4ZIE5dDB09OX8JdkZRqkMx1x7",
-    [string]$GatewayPhone = "+918290866520",
-    [string]$PlatformApiKey = "sk_live_omni_7a9f4c82b1d3e6"
+    [string]$HttpSMSApiKey = "YOUR_HTTPSMS_API_KEY",
+    [string]$GatewayPhone = "+917852081659",
+    [string]$PlatformApiKey = "sk_live_change_me_in_production"
 )
 
 # In-memory storage for sessions, logs, and valid platform API keys

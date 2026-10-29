@@ -6,7 +6,7 @@
 
 class OmniOTPApp {
   constructor() {
-    this.currentTab = 'overview';
+    this.currentTab = 'dashboard';
     this.countdownInterval = null;
     this.resendInterval = null;
     this.bulkState = {
@@ -22,35 +22,75 @@ class OmniOTPApp {
     this.init();
   }
 
-  init() {
-    this.setupTabs();
-    this.setupMockupToggle();
-    this.setupOverviewMetrics();
-    this.setupApiKeysTab();
-    this.setupTemplatesTab();
-    this.setupSendOTP();
-    this.setupVerifyOTP();
-    this.setupQuickSMS();
-    this.setupBulkSMS();
-    this.setupPlayground();
-    this.setupIntegrationHub();
-    this.setupLogs();
-    this.setupSettings();
-    this.setupPhoneMockupIntegration();
+  async init() {
+    // Tab/module setup: wrap each in try/catch so a missing panel (e.g. management
+    // tabs not present in this build) never kills the whole application.
+    const setups = [
+      'setupTabs', 'setupMockupToggle', 'setupOverviewMetrics', 'setupApiKeysTab', 'setupGatewaysTab',
+      'setupTemplatesTab', 'setupSendOTP', 'setupVerifyOTP', 'setupQuickSMS',
+      'setupBulkSMS', 'setupPlayground', 'setupIntegrationHub', 'setupLogs',
+      'setupSettings'
+    ];
+    for (const name of setups) {
+      try { this[name](); } catch (e) { console.warn(`[app] ${name} skipped:`, e.message); }
+    }
+
+    // Load public (non-secret) config from the backend and point the httpSMS
+    // client at the configured backend server URL.
+    try { await this.loadPublicConfig(); } catch (e) { console.warn('Public config load failed:', e); }
 
     // Check if there is an existing pending session to resume
-    this.resumeActiveSession();
+    try { this.resumeActiveSession(); } catch (e) { console.warn('[app] resumeActiveSession skipped:', e.message); }
+
+    // Sync existing localStorage data to Supabase on startup
+    try { this.syncLocalStorageToSupabase(); } catch (e) { console.warn('[app] syncLocalStorageToSupabase skipped:', e.message); }
+  }
+
+  async loadPublicConfig() {
+    const base = (window.OMNI_ENV && window.OMNI_ENV.API_BASE_URL) || 'http://localhost:5000';
+    const res = await fetch(base.replace(/\/$/, '') + '/api/v1/public-config');
+    if (!res.ok) return;
+    const cfg = await res.json();
+    // Point the httpSMS client at the backend server so all SMS/OTP traffic stays
+    // server-side and the httpSMS key is never exposed to the browser.
+    if (window.httpSMSClient && typeof window.httpSMSClient.saveConfig === 'function') {
+      window.httpSMSClient.saveConfig({
+        serverUrl: base,
+        useBackendServer: true,
+        platformApiKey: (window.OMNI_ENV && window.OMNI_ENV.PLATFORM_API_KEY) || 'sk_live_change_me_in_production'
+      });
+    }
+    if (cfg.supabaseUrl && cfg.supabaseAnonKey) {
+      window.OMNI_ENV = { ...window.OMNI_ENV, SUPABASE_URL: cfg.supabaseUrl, SUPABASE_ANON_KEY: cfg.supabaseAnonKey };
+    }
+  }
+
+  /**
+   * Force sync all existing localStorage data to Supabase
+   */
+  async syncLocalStorageToSupabase() {
+    if (window.supabaseStorage && typeof window.supabaseStorage.syncAllLocalStorage === 'function') {
+      try {
+        const results = await window.supabaseStorage.syncAllLocalStorage();
+        console.log('Supabase sync completed:', results);
+      } catch (e) {
+        console.warn('Supabase sync error:', e);
+      }
+    }
   }
 
   /* -------------------------------------------------------------
    * NAVIGATION & TABS
    * ----------------------------------------------------------- */
   setupTabs() {
-    const tabButtons = document.querySelectorAll('.nav-tab-btn');
-    tabButtons.forEach(btn => {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(btn => {
       btn.addEventListener('click', () => {
-        const targetTab = btn.getAttribute('data-tab');
+        const targetTab = btn.getAttribute('data-section');
         this.switchTab(targetTab);
+        // Close sidebar on mobile after selection
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.remove('open');
       });
     });
 
@@ -61,26 +101,53 @@ class OmniOTPApp {
         if (tab) this.switchTab(tab);
       });
     });
+
+    // Mobile menu toggle
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+      menuBtn.addEventListener('click', () => {
+        if (sidebar) sidebar.classList.toggle('open');
+      });
+    }
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+      });
+    }
   }
 
   switchTab(tabId) {
     this.currentTab = tabId;
 
-    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-section') === tabId);
     });
 
-    document.querySelectorAll('.tab-panel').forEach(panel => {
-      panel.classList.toggle('active', panel.id === `tab-${tabId}`);
+    document.querySelectorAll('.section').forEach(panel => {
+      panel.classList.toggle('active', panel.id === tabId);
     });
+
+    // Update page title/subtitle
+    const titles = {
+      dashboard: ['Dashboard', 'Welcome back, Roberts Grant'],
+      'send-otp': ['Send OTP', 'Send a one-time passcode to any mobile number via HTTP SMS'],
+      'verify-otp': ['Verify OTP', 'Enter the verification code sent to your mobile number'],
+      'sms-send': ['Direct SMS', 'Send a custom text message to any number'],
+      logs: ['Audit Logs', 'View recent OTP and SMS activity'],
+      gateways: ['Gateways', 'Manage SMS gateway configurations']
+    };
+    const t = titles[tabId] || titles.dashboard;
+    const titleEl = document.getElementById('page-title');
+    const subEl = document.getElementById('page-subtitle');
+    if (titleEl) titleEl.textContent = t[0];
+    if (subEl) subEl.textContent = t[1];
 
     // Refresh tab-specific data
-    if (tabId === 'overview') this.updateOverviewMetrics();
-    if (tabId === 'api-keys') this.renderApiKeysTable();
-    if (tabId === 'templates') this.renderTemplatesGrid();
+    if (tabId === 'dashboard') this.updateOverviewMetrics();
     if (tabId === 'logs') this.renderLogs();
-    if (tabId === 'api-playground') this.refreshPlaygroundKeys();
-    if (tabId === 'integration') this.updateIntegrationSnippets();
+    if (tabId === 'gateways') this.renderGateways();
   }
 
   setupMockupToggle() {
@@ -195,16 +262,108 @@ class OmniOTPApp {
     if (btnConfirm && inputName) {
       btnConfirm.addEventListener('click', () => {
         const name = inputName.value.trim() || 'Mobile App Client';
-        const newKey = window.httpSMSClient.generateApiKey(name);
+        const keyInput = document.getElementById('new-key-value-input');
+        const keyVal = keyInput?.value.trim();
+        const newKey = keyVal
+          ? window.httpSMSClient.addApiKey(name, keyVal)
+          : window.httpSMSClient.generateApiKey(name);
         inputName.value = '';
+        if (keyInput) keyInput.value = '';
         panelCreate?.classList.add('hidden');
         this.renderApiKeysTable();
         this.updateOverviewMetrics();
-        this.showToast(`New API Key generated for "${name}"!`, 'success');
+        this.showToast(`API Key ${keyVal ? 'added' : 'generated'} for "${name}"!`, 'success');
       });
     }
 
     this.renderApiKeysTable();
+  }
+
+  setupGatewaysTab() {
+    const btnOpen = document.getElementById('btn-open-add-gateway');
+    const panel = document.getElementById('add-gateway-container');
+    const btnConfirm = document.getElementById('btn-confirm-add-gateway');
+    const btnCancel = document.getElementById('btn-cancel-add-gateway');
+    const inputName = document.getElementById('gw-name');
+    const inputFrom = document.getElementById('gw-from');
+    const inputKey = document.getElementById('gw-apikey');
+    const inputCap = document.getElementById('gw-cap');
+
+    if (btnOpen && panel) {
+      btnOpen.addEventListener('click', () => {
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) inputName?.focus();
+      });
+    }
+    if (btnCancel && panel) {
+      btnCancel.addEventListener('click', () => panel.classList.add('hidden'));
+    }
+    if (btnConfirm) {
+      btnConfirm.addEventListener('click', () => {
+        const name = inputName?.value.trim() || 'Gateway';
+        const from = inputFrom?.value.trim();
+        const apiKey = inputKey?.value.trim();
+        const cap = Number(inputCap?.value) || 1000;
+        if (!from || !apiKey) {
+          this.showToast('From number and API key are required.', 'error');
+          return;
+        }
+        window.httpSMSClient.addGateway({ name, from, apiKey, cap });
+        if (inputName) inputName.value = '';
+        if (inputFrom) inputFrom.value = '';
+        if (inputKey) inputKey.value = '';
+        if (inputCap) inputCap.value = '1000';
+        panel?.classList.add('hidden');
+        this.renderGateways();
+        this.showToast('Gateway added successfully!', 'success');
+      });
+    }
+    this.renderGateways();
+  }
+
+  renderGateways() {
+    const container = document.getElementById('gateways-container');
+    if (!container) return;
+    const gateways = window.httpSMSClient?.gateways || [];
+    if (!gateways.length) {
+      container.innerHTML = `<div class="empty-state"><span class="empty-icon">🌐</span><p>No gateways configured.</p></div>`;
+      return;
+    }
+    container.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>From</th><th>API Key</th><th>Sent/Cap</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${gateways.map(g => `
+            <tr>
+              <td><strong>${this.escapeHtml(g.name)}</strong></td>
+              <td>${this.escapeHtml(g.from_number || g.from || '')}</td>
+              <td><code>${this.escapeHtml((g.api_key || g.apiKey || '').slice(0,8))}••••</code></td>
+              <td>${g.sent || 0}/${g.cap || 1000}</td>
+              <td><span class="${g.active ? 'badge-active' : 'badge-revoked'}">${g.active ? 'ACTIVE' : 'INACTIVE'}</span></td>
+              <td>
+                <button class="btn-table-action btn-toggle-gw" data-id="${g.id}">${g.active ? 'Disable' : 'Enable'}</button>
+                <button class="btn-table-action btn-delete-gw" data-id="${g.id}" style="color:var(--brand-rose);margin-left:4px;">Delete</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    container.querySelectorAll('.btn-toggle-gw').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const g = gateways.find(x => x.id === btn.dataset.id);
+        if (g) { window.httpSMSClient.toggleGateway(g.id, !g.active); this.renderGateways(); }
+      });
+    });
+    container.querySelectorAll('.btn-delete-gw').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('Delete this gateway?')) {
+          window.httpSMSClient.removeGateway(btn.dataset.id);
+          this.renderGateways();
+          this.showToast('Gateway removed', 'info');
+        }
+      });
+    });
   }
 
   renderApiKeysTable() {
@@ -317,7 +476,7 @@ class OmniOTPApp {
     }
 
     if (btnSave && inputName && inputText) {
-      btnSave.addEventListener('click', () => {
+      btnSave.addEventListener('click', async () => {
         const name = inputName.value.trim();
         const text = inputText.value.trim();
         const cat = selectCat?.value || 'CUSTOM';
@@ -326,15 +485,24 @@ class OmniOTPApp {
           this.showToast('Please provide both template title and content.', 'error');
           return;
         }
+        try {
+          const client = window.httpSMSClient;
+          if (!client) {
+            this.showToast('SMS client not initialized. Refresh the page.', 'error');
+            return;
+          }
+          await client.addTemplate({ name, category: cat, text });
 
-        window.httpSMSClient.addTemplate({ name, category: cat, text });
-        inputName.value = '';
-        inputText.value = '';
-        panelEditor?.classList.add('hidden');
-        this.renderTemplatesGrid();
-        this.populateSendOtpTemplates();
-        this.updateOverviewMetrics();
-        this.showToast('SMS Template saved successfully!', 'success');
+          inputName.value = '';
+          inputText.value = '';
+          panelEditor?.classList.add('hidden');
+          this.renderTemplatesGrid();
+          this.populateSendOtpTemplates();
+          this.updateOverviewMetrics();
+          this.showToast('SMS Template saved successfully!', 'success');
+        } catch (e) {
+          this.showToast('Save failed: ' + (e.message || e), 'error');
+        }
       });
     }
 
@@ -563,15 +731,9 @@ class OmniOTPApp {
       });
 
       // Notify Smartphone Mockup visualizer with incoming SMS
-      const generatedCode = window.otpManager.sessions[session.sessionId]?.code;
-      const fullMessage = window.otpManager.sessions[session.sessionId]?.messageContent;
+      // OTP code/messageContent are backend-only; never exposed to the browser
       
-      window.phoneMockup.receiveSMS({
-        from: window.httpSMSClient.config.fromNumber || '+918290866520',
-        to: session.phone,
-        content: fullMessage,
-        code: generatedCode
-      });
+      
 
       this.showToast(`Passcode sent successfully to ${session.maskedPhone}!`, 'success');
 
@@ -774,7 +936,7 @@ class OmniOTPApp {
       return;
     }
 
-    const result = window.otpManager.verifyOTP(sessionId, enteredCode);
+    const result = await window.otpManager.verifyOTP(sessionId, enteredCode);
     const banner = document.getElementById('verify-result-banner');
 
     if (result.success) {
@@ -815,15 +977,9 @@ class OmniOTPApp {
     try {
       const newSession = await window.otpManager.resendOTP(sessionId);
       
-      const generatedCode = window.otpManager.sessions[newSession.sessionId]?.code;
-      const fullMessage = window.otpManager.sessions[newSession.sessionId]?.messageContent;
+      // OTP code/messageContent are backend-only; never exposed to the browser
       
-      window.phoneMockup.receiveSMS({
-        from: window.httpSMSClient.config.fromNumber,
-        to: newSession.phone,
-        content: fullMessage,
-        code: generatedCode
-      });
+      
 
       this.setupActiveVerifySession(newSession.sessionId);
       this.showToast('New verification code sent via SMS!', 'success');
@@ -831,6 +987,129 @@ class OmniOTPApp {
       this.showToast(e.message, 'error');
     } finally {
       if (btn) btn.disabled = false;
+    }
+  }
+
+  setupControlCenter() {
+    const sentEl = document.getElementById('cc-val-sent');
+    const failEl = document.getElementById('cc-val-failed');
+    const gwEl = document.getElementById('cc-val-gw');
+    const keysEl = document.getElementById('cc-val-keys');
+    const slider = document.getElementById('cc-speed-slider');
+    const speedVal = document.getElementById('cc-speed-val');
+    const gwList = document.getElementById('cc-gateway-list');
+    const chart = document.getElementById('cc-chart');
+    const barChart = document.getElementById('cc-bar-chart');
+
+    const stats = window.otpManager.getStats();
+    const gateways = window.httpSMSClient.gateways || [];
+    const keys = window.httpSMSClient.apiKeys || [];
+
+    // Animated counters
+    const animate = (el, target) => {
+      if (!el) return;
+      const start = 0;
+      const duration = 700;
+      const t0 = performance.now();
+      const step = (now) => {
+        const p = Math.min(1, (now - t0) / duration);
+        el.textContent = Math.round(start + (target - start) * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+    animate(sentEl, stats.totalDispatched);
+    animate(failEl, stats.totalFailed);
+    animate(gwEl, gateways.filter(g => g.active).length);
+    animate(keysEl, keys.filter(k => k.status === 'ACTIVE').length);
+
+    // Speed slider
+    if (slider) {
+      slider.value = window.httpSMSClient.config.bulkDelay || 1000;
+      if (speedVal) speedVal.textContent = slider.value + ' ms';
+      slider.oninput = () => {
+        if (speedVal) speedVal.textContent = slider.value + ' ms';
+        window.httpSMSClient.saveConfig({ bulkDelay: Number(slider.value) });
+      };
+    }
+
+    // Gateway live status
+    if (gwList) {
+      if (!gateways.length) {
+        gwList.innerHTML = '<div class="cc-gw-empty">No gateways configured. Add one in Settings.</div>';
+      } else {
+        gwList.innerHTML = gateways.map(g => {
+          const pct = Math.min(100, Math.round(((g.sent || 0) / (g.cap || 1000)) * 100));
+          const status = g.active ? 'ACTIVE' : 'INACTIVE';
+          return `<div class="cc-gw-card">
+            <div class="cc-gw-top">
+              <span class="cc-gw-name">${this.escapeHtml(g.name || 'Gateway')}</span>
+              <span class="cc-gw-status ${g.active ? 'on' : 'off'}"><span class="pulse"></span>${status}</span>
+            </div>
+            <div class="cc-gw-from">${this.escapeHtml(g.from || '')}</div>
+            <div class="cc-gw-bar"><div class="cc-gw-bar-fill" style="width:${pct}%"></div></div>
+            <div class="cc-gw-meta">${g.sent || 0} / ${g.cap || 1000} sent (${pct}%)</div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // Line chart (activity)
+    if (chart) {
+      const ctx = chart.getContext('2d');
+      if (ctx) {
+        const w = chart.width, h = chart.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        for (let y = 0; y <= h; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+        const logs = (window.otpManager.logs || []).slice(0, 40).reverse();
+        const points = logs.map((l, i) => ({ x: (i / Math.max(1, logs.length - 1)) * (w - 20) + 10, y: l.status === 'SENT' || l.status === 'VERIFIED' ? h - 30 - Math.random() * 40 : h - 10 }));
+        if (points.length > 1) {
+          const grad = ctx.createLinearGradient(0, 0, 0, h);
+          grad.addColorStop(0, 'rgba(34,211,238,0.95)');
+          grad.addColorStop(1, 'rgba(99,102,241,0.15)');
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+          ctx.stroke();
+          ctx.fillStyle = '#22d3ee';
+          points.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2); ctx.fill(); });
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('Dispatch Activity (recent)', 10, 16);
+      }
+    }
+
+    // Bar chart (per-gateway sent)
+    if (barChart) {
+      const ctx = barChart.getContext('2d');
+      if (ctx) {
+        const w = barChart.width, h = barChart.height;
+        ctx.clearRect(0, 0, w, h);
+        const gws = gateways.length ? gateways : [{ name: 'none', sent: 0, cap: 1 }];
+        const barW = Math.max(20, (w - 40) / gws.length - 10);
+        const maxVal = Math.max(1, ...gws.map(g => g.cap || 1));
+        gws.forEach((g, i) => {
+          const x = 20 + i * (barW + 10);
+          const barH = ((g.sent || 0) / maxVal) * (h - 40);
+          const grad = ctx.createLinearGradient(0, h - barH, 0, h);
+          grad.addColorStop(0, '#22d3ee');
+          grad.addColorStop(1, '#6366f1');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x, h - barH - 20, barW, barH);
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.font = '10px sans-serif';
+          ctx.fillText((g.name || 'GW').slice(0, 8), x, h - 5);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(String(g.sent || 0), x, h - barH - 25);
+        });
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('Per-Gateway Sent Count', 10, 16);
+      }
     }
   }
 
@@ -848,19 +1127,14 @@ class OmniOTPApp {
    * ----------------------------------------------------------- */
   setupQuickSMS() {
     const form = document.getElementById('direct-sms-form');
-    const msgInput = document.getElementById('direct-sms-content');
-    const toInput = document.getElementById('direct-sms-to');
+    const msgInput = document.getElementById('sms-message-input');
+    const toInput = document.getElementById('sms-phone-input');
 
     if (msgInput) {
       msgInput.addEventListener('input', () => {
         const len = msgInput.value.length;
-        const charEl = document.getElementById('direct-char-count');
-        const partEl = document.getElementById('direct-parts-count');
+        const charEl = document.getElementById('sms-char-count');
         if (charEl) charEl.textContent = `${len} characters`;
-        if (partEl) {
-          const parts = Math.ceil(len / 160) || 1;
-          partEl.textContent = `${parts} SMS`;
-        }
       });
     }
 
@@ -875,7 +1149,7 @@ class OmniOTPApp {
           return;
         }
 
-        const btn = document.getElementById('btn-send-direct-sms');
+        const btn = document.getElementById('btn-send-sms');
         if (btn) {
           btn.disabled = true;
           btn.innerHTML = `<span class="spinner-sm"></span> Dispatching...`;
@@ -883,12 +1157,6 @@ class OmniOTPApp {
 
         try {
           const res = await window.otpManager.sendCustomSMS({ phone: to, content });
-          
-          window.phoneMockup.receiveSMS({
-            from: window.httpSMSClient.config.fromNumber,
-            to: to,
-            content: content
-          });
 
           this.showToast('Custom SMS dispatched successfully!', 'success');
           this.updateOverviewMetrics();
@@ -1214,13 +1482,6 @@ class OmniOTPApp {
             length: bodyObj.length || 6,
             expiryMinutes: bodyObj.expiry_minutes || 5,
             template: bodyObj.template
-          });
-          const code = window.otpManager.sessions[sess.sessionId]?.code;
-          window.phoneMockup.receiveSMS({
-            from: window.httpSMSClient.config.fromNumber,
-            to: sess.phone,
-            content: `Your OTP is ${code}. Valid for 5 mins.`,
-            code: code
           });
           responseData = {
             success: true,
@@ -1604,7 +1865,7 @@ Future<void> sendOtp(String phone) async {
 
         window.httpSMSClient.saveConfig({ apiKey, fromNumber, serverUrl });
         this.showToast('Gateway settings saved successfully!', 'success');
-        this.updateGatewayModeHeader(window.httpSMSClient.config.isSimulated);
+        this.updateGatewayModeHeader();
       });
     }
   }
@@ -1633,26 +1894,6 @@ Future<void> sendOtp(String phone) async {
   /* -------------------------------------------------------------
    * SMARTPHONE MOCKUP CONTROLS
    * ----------------------------------------------------------- */
-  setupPhoneMockupIntegration() {
-    const btnSound = document.getElementById('btn-toggle-sound');
-    const btnClear = document.getElementById('btn-clear-mockup');
-
-    if (btnSound) {
-      btnSound.addEventListener('click', () => {
-        const soundOn = !btnSound.classList.contains('active');
-        btnSound.classList.toggle('active', soundOn);
-        window.httpSMSClient.saveConfig({ soundEffects: soundOn });
-        this.showToast(soundOn ? 'SMS chime sound enabled' : 'SMS sound muted', 'info');
-      });
-    }
-
-    if (btnClear) {
-      btnClear.addEventListener('click', () => {
-        window.phoneMockup.clearChat();
-        this.showToast('Smartphone messages cleared', 'info');
-      });
-    }
-  }
 
   /* -------------------------------------------------------------
    * UTILITIES: TOASTS, CLIPBOARD & CONFETTI
@@ -1777,6 +2018,40 @@ Future<void> sendOtp(String phone) async {
     };
 
     requestAnimationFrame(animate);
+  }
+
+  /* -------------------------------------------------------------
+   * TAB 11: SETTINGS
+   * ----------------------------------------------------------- */
+  setupSettings() {
+    const saveBtn = document.getElementById('btn-save-settings');
+    const toggleSound = document.getElementById('toggle-sound');
+    const toggleCompact = document.getElementById('toggle-compact');
+
+    const loadToggle = (el, key, defaultOn = false) => {
+      const on = localStorage.getItem(key) !== 'false';
+      if (on) el.classList.add('on');
+      el.addEventListener('click', () => {
+        const nowOn = !el.classList.contains('on');
+        el.classList.toggle('on');
+        localStorage.setItem(key, nowOn);
+        this.showToast(nowOn ? 'Enabled' : 'Disabled', 'info');
+      });
+    };
+    if (toggleSound) loadToggle(toggleSound, 'omni_setting_sound', true);
+    if (toggleCompact) loadToggle(toggleCompact, 'omni_setting_compact', false);
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        const serverUrl = document.getElementById('settings-server-url')?.value;
+        const fromNumber = document.getElementById('settings-from-number')?.value;
+        const defaultCc = document.getElementById('settings-default-cc')?.value;
+        if (window.httpSMSClient && typeof window.httpSMSClient.saveConfig === 'function') {
+          window.httpSMSClient.saveConfig({ serverUrl, fromNumber, defaultCountryCode: defaultCc });
+        }
+        this.showToast('Settings saved', 'success');
+      });
+    }
   }
 
   escapeHtml(str) {

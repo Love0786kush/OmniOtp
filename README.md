@@ -132,7 +132,7 @@ Copy the ready-to-use template files from `templates/android-app/`:
 ### Step 3: Call from Kotlin
 ```kotlin
 val api = OtpApiService.create()
-val apiKey = "sk_live_omni_7a9f4c82b1d3e6" // From your OmniOTP Dashboard
+val apiKey = "sk_live_change_me_in_production" // From your OmniOTP Dashboard
 
 // 1. Send OTP
 val sendRes = api.sendOtp(apiKey, SendOtpRequest(phone = "+919876543210", app_name = "My App"))
@@ -154,7 +154,7 @@ Open [`templates/web-widget/otp-login-widget.html`](file:///c:/Users/XXX/Desktop
 ```html
 <script>
 const API_URL = "http://localhost:5000"; // Or your deployed Cloudflare Worker URL
-const API_KEY = "sk_live_omni_7a9f4c82b1d3e6";
+const API_KEY = "sk_live_change_me_in_production";
 
 // Send OTP
 fetch(`${API_URL}/api/v1/otp/send`, {
@@ -227,7 +227,7 @@ fetch(`${API_URL}/api/v1/otp/send`, {
 - **Request Body**:
 ```json
 {
-  "phones": ["+919876543210", "+918290866520"],
+  "phones": ["+919876543210", "+917852081659"],
   "message": "Special announcement for all users!",
   "delay_ms": 1000
 }

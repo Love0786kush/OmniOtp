@@ -1,117 +1,83 @@
 /**
- * OTP Manager & Lifecycle Engine
- * Handles cryptographic code generation, templates, session state,
- * verification verification checks, attempt ratelimiting, and audit logging.
+ * OmniOTP Cloud - OTP Manager & Lifecycle Engine (backend-driven)
+ *
+ * SECURITY: The OTP code is generated and verified by the trusted backend only.
+ * The browser never generates, stores, or compares the plaintext OTP. It only
+ * holds session metadata (id, phone, maskedPhone, status, expiry).
  */
 
 class OTPManager {
   constructor(smsClient) {
     this.smsClient = smsClient || window.httpSMSClient;
-    this.storageSessionsKey = 'httpsms_otp_sessions_v1';
-    this.storageLogsKey = 'httpsms_otp_logs_v1';
+    this.sessionsStorageKey = 'omni_otp_sessions_v2';
+    this.logsStorageKey = 'omni_otp_logs_v2';
+
+    this.supabaseStorage = window.supabaseStorage || null;
 
     this.sessions = this.loadSessions();
     this.logs = this.loadLogs();
     this.activeSessionId = null;
 
-    // Default settings
+    // Default settings (expiry/cooldown/attempts are enforced by the backend too)
     this.defaultSettings = {
       otpLength: 6,
-      otpType: 'numeric', // 'numeric' | 'alphanumeric'
+      otpType: 'numeric',
       expiryMinutes: 5,
       maxAttempts: 3,
       cooldownSeconds: 60,
       template: 'Your verification code is {{otp}}. Valid for {{expiry}} minutes. Never share this code with anyone.'
     };
+
+    this.enabled = !!this.supabaseStorage;
   }
 
-  loadSessions() {
-    try {
-      const data = localStorage.getItem(this.storageSessionsKey);
-      return data ? JSON.parse(data) : {};
-    } catch (e) {
-      return {};
-    }
-  }
-
+  /** Save sessions to local storage */
   saveSessions() {
-    try {
-      localStorage.setItem(this.storageSessionsKey, JSON.stringify(this.sessions));
-    } catch (e) {
-      console.warn('Could not save sessions to storage', e);
-    }
+    try { localStorage.setItem(this.sessionsStorageKey, JSON.stringify(this.sessions)); } catch (e) { console.warn('Could not save sessions', e); }
   }
-
+  loadSessions() {
+    try { const d = localStorage.getItem(this.sessionsStorageKey); return d ? JSON.parse(d) : {}; } catch (e) { return {}; }
+  }
   loadLogs() {
-    try {
-      const data = localStorage.getItem(this.storageLogsKey);
-      return data ? JSON.parse(data) : [];
-    } catch (e) {
-      return [];
-    }
+    try { const d = localStorage.getItem(this.logsStorageKey); return d ? JSON.parse(d) : []; } catch (e) { return []; }
   }
-
   saveLogs() {
-    try {
-      localStorage.setItem(this.storageLogsKey, JSON.stringify(this.logs));
-    } catch (e) {
-      console.warn('Could not save logs to storage', e);
-    }
+    try { localStorage.setItem(this.logsStorageKey, JSON.stringify(this.logs)); } catch (e) { console.warn('Could not save logs', e); }
   }
-
   addLog(entry) {
-    const logItem = {
-      id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      timestamp: new Date().toISOString(),
-      ...entry
-    };
+    const logItem = { id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6), timestamp: new Date().toISOString(), ...entry };
     this.logs.unshift(logItem);
-    // Keep last 100 entries
-    if (this.logs.length > 100) {
-      this.logs = this.logs.slice(0, 100);
-    }
+    if (this.logs.length > 100) this.logs = this.logs.slice(0, 100);
     this.saveLogs();
+    if (window.supabaseClient) {
+      const row = {
+        id: logItem.id,
+        timestamp: logItem.timestamp,
+        type: logItem.type || 'CLIENT',
+        status: logItem.status || 'INFO',
+        session_id: logItem.sessionId || null,
+        phone: logItem.phone || null,
+        masked_phone: logItem.maskedPhone || null,
+        content: logItem.content || logItem.message || null,
+        error: logItem.error || null,
+        simulated: !!logItem.simulated,
+        duration_ms: logItem.durationMs || null
+      };
+      window.supabaseClient.from('omni_logs').insert(row).then(({ error }) => {
+        if (error) console.warn('Supabase log sync failed:', error.message);
+      }).catch(e => console.warn('Supabase log sync failed:', e.message));
+    }
     return logItem;
   }
 
-  clearLogs() {
-    this.logs = [];
-    this.saveLogs();
-  }
-
-  /**
-   * Cryptographically secure random OTP generation
-   */
-  generateOTP(length = 6, type = 'numeric') {
-    const charset = type === 'alphanumeric' 
-      ? '23456789ABCDEFGHJKLMNPQRSTUVWXYZ' 
-      : '0123456789';
-    
-    const randomValues = new Uint32Array(length);
-    window.crypto.getRandomValues(randomValues);
-    
-    let otp = '';
-    for (let i = 0; i < length; i++) {
-      otp += charset[randomValues[i] % charset.length];
-    }
-    return otp;
-  }
-
-  /**
-   * Mask phone number for security display (+1 800 *** *199)
-   */
+  /** Mask phone number for display only */
   maskPhoneNumber(phone) {
     if (!phone || phone.length < 7) return phone;
     const len = phone.length;
-    const start = phone.substring(0, 4);
-    const end = phone.substring(len - 3);
-    const masked = '*'.repeat(Math.max(3, len - 7));
-    return `${start} ${masked} ${end}`;
+    return phone.substring(0, 4) + '*'.repeat(Math.max(3, len - 7)) + phone.substring(len - 3);
   }
 
-  /**
-   * Format message content with dynamic template variables
-   */
+  /** Format message template (client-side preview only) */
   formatTemplate(template, { otp, expiryMinutes, phone }) {
     return template
       .replace(/{{otp}}/gi, otp)
@@ -119,303 +85,219 @@ class OTPManager {
       .replace(/{{phone}}/gi, phone);
   }
 
-  /**
-   * Send a new OTP
-   */
+  /** Backend base URL + platform key from httpSMS config */
+  _apiBase() {
+    const cfg = this.smsClient.getConfig && this.smsClient.getConfig();
+    return (cfg && cfg.serverUrl ? cfg.serverUrl.replace(/\/$/, '') : 'http://localhost:5000');
+  }
+  _platformKey() {
+    const cfg = this.smsClient.getConfig && this.smsClient.getConfig();
+    return (cfg && cfg.platformApiKey) || 'sk_live_change_me_in_production';
+  }
+
+  /** Get active session by ID (metadata only - no OTP code) */
+  getSession(sessionId) {
+    return this.sessions[sessionId] || null;
+  }
+
+  /** Find most recent pending session for a phone number */
+  getActiveSessionForPhone(phone) {
+    const list = Object.values(this.sessions).filter((s) => s.phone === phone);
+    if (!list.length) return null;
+    list.sort((a, b) => b.createdAt - a.createdAt);
+    return list[0];
+  }
+
+  /** Send a new OTP via the backend (backend generates + sends the code; browser never sees it) */
   async sendOTP({ phone, length = 6, type = 'numeric', expiryMinutes = 5, template = null }) {
     const cleanPhone = phone ? phone.trim() : '';
     const valid = this.smsClient.validatePhoneNumber(cleanPhone);
     if (!valid.valid) {
       throw new Error(valid.error);
     }
-
     const recipientPhone = valid.formatted;
 
-    // Check cooldown for this specific phone number
-    const existingSession = this.getActiveSessionForPhone(recipientPhone);
-    if (existingSession && existingSession.cooldownUntil && Date.now() < existingSession.cooldownUntil) {
-      const waitSec = Math.ceil((existingSession.cooldownUntil - Date.now()) / 1000);
-      throw new Error(`Please wait ${waitSec}s before requesting a new OTP for this number.`);
-    }
-
-    const otpCode = this.generateOTP(length, type);
-    const tpl = template || this.defaultSettings.template;
-    const messageContent = this.formatTemplate(tpl, {
-      otp: otpCode,
-      expiryMinutes: expiryMinutes,
-      phone: recipientPhone
-    });
-
-    const sessionId = 'otp_sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-    const now = Date.now();
-    const expiresAt = now + (expiryMinutes * 60 * 1000);
-    const cooldownUntil = now + (this.defaultSettings.cooldownSeconds * 1000);
-
     const startTime = performance.now();
-
-    // Call httpSMS Client
-    let dispatchResult;
+    let data;
     try {
-      dispatchResult = await this.smsClient.sendMessage({
-        to: recipientPhone,
-        content: messageContent,
-        requestId: sessionId
+      const res = await fetch(this._apiBase() + '/api/v1/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': this._platformKey() },
+        body: JSON.stringify({ phone: recipientPhone, length, type, expiry_minutes: expiryMinutes, template })
       });
+      data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'OTP dispatch failed (HTTP ' + res.status + ')');
+      }
     } catch (err) {
-      // Record failure in logs
       this.addLog({
-        type: 'OTP_DISPATCH',
-        status: 'FAILED',
-        phone: recipientPhone,
-        maskedPhone: this.maskPhoneNumber(recipientPhone),
-        error: err.message,
-        simulated: this.smsClient.config.isSimulated || !this.smsClient.config.apiKey,
+        type: 'OTP_DISPATCH', status: 'FAILED', phone: recipientPhone,
+        maskedPhone: this.maskPhoneNumber(recipientPhone), error: err.message, simulated: false,
         durationMs: Math.round(performance.now() - startTime)
       });
       throw err;
     }
 
     const latency = Math.round(performance.now() - startTime);
+    const cooldownSeconds = data.expires_in_seconds ? Math.round(data.expires_in_seconds / 60) : this.defaultSettings.cooldownSeconds;
 
-    // Save Session
     const sessionData = {
-      id: sessionId,
-      phone: recipientPhone,
-      maskedPhone: this.maskPhoneNumber(recipientPhone),
-      code: otpCode, // stored securely in session for verification
-      length: length,
-      type: type,
-      createdAt: now,
-      expiresAt: expiresAt,
-      cooldownUntil: cooldownUntil,
+      id: data.session_id,
+      phone: data.phone,
+      maskedPhone: data.masked_phone || this.maskPhoneNumber(data.phone),
+      length, type,
+      createdAt: Date.now(),
+      expiresAt: data.expires_at,
+      cooldownUntil: Date.now() + (cooldownSeconds * 1000),
       attemptsLeft: this.defaultSettings.maxAttempts,
       maxAttempts: this.defaultSettings.maxAttempts,
-      status: 'pending', // 'pending' | 'verified' | 'expired' | 'exhausted'
-      messageContent: messageContent,
-      simulated: dispatchResult.simulated || false,
-      messageId: dispatchResult.data?.id || 'msg_' + Date.now(),
+      status: 'pending',
+      messageContent: null,
+      simulated: false,
+      messageId: null,
       verificationToken: null
     };
 
-    this.sessions[sessionId] = sessionData;
-    this.activeSessionId = sessionId;
+    this.sessions[sessionData.id] = sessionData;
+    this.activeSessionId = sessionData.id;
     this.saveSessions();
+    if (this.supabaseStorage) {
+      try { await this.supabaseStorage.saveAllRows('otp_sessions', [{ id: sessionData.id, phone: sessionData.phone, masked_phone: sessionData.maskedPhone, status: 'pending', expires_at: sessionData.expiresAt, attempts_left: sessionData.attemptsLeft, max_attempts: sessionData.maxAttempts, simulated: false, provider_status: data.provider_status }]); } catch (e) { console.warn('Supabase session sync failed:', e); }
+    }
 
-    // Log success dispatch (code masked for security)
     this.addLog({
-      type: 'OTP_DISPATCH',
-      status: 'SENT',
-      sessionId: sessionId,
-      phone: recipientPhone,
-      maskedPhone: this.maskPhoneNumber(recipientPhone),
-      code: '••••••', // never expose plain OTP in audit logs
-      messageId: sessionData.messageId,
-      simulated: sessionData.simulated,
-      content: 'Verification OTP sent to recipient device',
-      durationMs: latency
+      type: 'OTP_DISPATCH', status: 'SENT', sessionId: sessionData.id, phone: sessionData.phone,
+      maskedPhone: sessionData.maskedPhone, code: '••••••', messageId: data.message_id || null,
+      simulated: false, content: 'Verification OTP sent via backend', durationMs: latency
     });
 
     return {
-      sessionId: sessionId,
-      phone: recipientPhone,
+      sessionId: sessionData.id,
+      phone: sessionData.phone,
       maskedPhone: sessionData.maskedPhone,
-      expiresAt: expiresAt,
-      cooldownSeconds: this.defaultSettings.cooldownSeconds,
-      simulated: sessionData.simulated
+      expiresAt: sessionData.expiresAt,
+      cooldownSeconds,
+      provider_status: data.provider_status,
+      simulated: false
     };
   }
 
-  /**
-   * Get active session by ID
-   */
-  getSession(sessionId) {
-    return this.sessions[sessionId] || null;
-  }
-
-  /**
-   * Find most recent pending session for a phone number
-   */
-  getActiveSessionForPhone(phone) {
-    const list = Object.values(this.sessions).filter(s => s.phone === phone);
-    if (!list.length) return null;
-    list.sort((a, b) => b.createdAt - a.createdAt);
-    return list[0];
-  }
-
-  /**
-   * Verify an OTP
-   */
-  verifyOTP(sessionId, enteredCode) {
-    const session = this.sessions[sessionId];
-    if (!session) {
-      return { success: false, reason: 'SESSION_NOT_FOUND', message: 'No OTP session found. Please request a new code.' };
-    }
-
-    // Check if already verified
-    if (session.status === 'verified') {
-      return {
-        success: true,
-        alreadyVerified: true,
-        message: 'This code was already verified.',
-        token: session.verificationToken,
-        phone: session.phone
-      };
-    }
-
-    // Check expiration
-    if (Date.now() > session.expiresAt) {
-      session.status = 'expired';
-      this.saveSessions();
-      this.addLog({
-        type: 'OTP_VERIFICATION',
-        status: 'EXPIRED',
-        sessionId: session.id,
-        phone: session.phone,
-        message: 'Attempted verification on expired OTP'
-      });
-      return { success: false, reason: 'EXPIRED', message: 'OTP has expired. Please request a new verification code.' };
-    }
-
-    // Check attempts
-    if (session.attemptsLeft <= 0 || session.status === 'exhausted') {
-      session.status = 'exhausted';
-      this.saveSessions();
-      return {
-        success: false,
-        reason: 'MAX_ATTEMPTS_EXCEEDED',
-        message: 'Maximum verification attempts exceeded. Please request a new code.'
-      };
-    }
-
-    const cleanEntered = enteredCode ? enteredCode.toString().trim().toUpperCase() : '';
-    const expected = session.code.toString().trim().toUpperCase();
-
-    if (cleanEntered === expected) {
-      // Success!
-      session.status = 'verified';
-      session.verifiedAt = Date.now();
-      session.verificationToken = 'jwt_otp_' + btoa(`${session.phone}:${Date.now()}:${Math.random().toString(36)}`);
-      this.saveSessions();
-
-      this.addLog({
-        type: 'OTP_VERIFICATION',
-        status: 'VERIFIED',
-        sessionId: session.id,
-        phone: session.phone,
-        token: session.verificationToken,
-        message: 'OTP verified successfully'
-      });
-
-      return {
-        success: true,
-        message: 'Sahi OTP! Mobile number successfully verify ho gaya.',
-        token: session.verificationToken,
-        phone: session.phone,
-        maskedPhone: session.maskedPhone,
-        verifiedAt: session.verifiedAt
-      };
-    } else {
-      // Incorrect code
-      session.attemptsLeft -= 1;
-      const exhausted = session.attemptsLeft <= 0;
-      if (exhausted) {
-        session.status = 'exhausted';
-      }
-      this.saveSessions();
-
-      this.addLog({
-        type: 'OTP_VERIFICATION',
-        status: exhausted ? 'EXHAUSTED' : 'INCORRECT',
-        sessionId: session.id,
-        phone: session.phone,
-        attemptsLeft: session.attemptsLeft,
-        message: 'Incorrect OTP attempt'
-      });
-
-      return {
-        success: false,
-        reason: exhausted ? 'MAX_ATTEMPTS_EXCEEDED' : 'INVALID_CODE',
-        attemptsLeft: session.attemptsLeft,
-        message: exhausted
-          ? 'Galat OTP! Jyada baar galat code dala gaya hai. Session block ho gaya hai.'
-          : `Galat OTP! (Incorrect Code). Kripya apne phone ka SMS check karein aur sahi code dalein. (${session.attemptsLeft} attempts bache hain)`
-      };
-    }
-  }
-
-  /**
-   * Resend OTP for existing session
-   */
+  /** Resend an OTP for the same phone */
   async resendOTP(sessionId) {
     const session = this.sessions[sessionId];
-    if (!session) {
-      throw new Error('Session not found.');
-    }
-
-    return await this.sendOTP({
-      phone: session.phone,
-      length: session.length,
-      type: session.type,
-      expiryMinutes: Math.round((session.expiresAt - session.createdAt) / 60000) || 5
-    });
+    if (!session) throw new Error('Session not found.');
+    return await this.sendOTP({ phone: session.phone, length: session.length, type: session.type, expiryMinutes: this.defaultSettings.expiryMinutes });
   }
 
-  /**
-   * Send custom transactional or alert SMS
-   */
+  /** Send custom transactional SMS (backend) */
   async sendCustomSMS({ phone, content, from }) {
     const startTime = performance.now();
     try {
-      const result = await this.smsClient.sendMessage({
-        to: phone,
-        content: content,
-        from: from
+      const res = await fetch(this._apiBase() + '/api/v1/sms/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': this._platformKey() },
+        body: JSON.stringify({ phone, message: content })
       });
-
-      this.addLog({
-        type: 'CUSTOM_SMS',
-        status: 'SENT',
-        phone: phone,
-        content: content,
-        simulated: result.simulated,
-        durationMs: Math.round(performance.now() - startTime)
-      });
-
-      return result;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Direct SMS failed');
+      this.addLog({ type: 'CUSTOM_SMS', status: 'SENT', phone, content, simulated: false, durationMs: Math.round(performance.now() - startTime) });
+      return data;
     } catch (err) {
-      this.addLog({
-        type: 'CUSTOM_SMS',
-        status: 'FAILED',
-        phone: phone,
-        content: content,
-        error: err.message,
-        durationMs: Math.round(performance.now() - startTime)
-      });
+      this.addLog({ type: 'CUSTOM_SMS', status: 'FAILED', phone, content, error: err.message, durationMs: Math.round(performance.now() - startTime) });
       throw err;
     }
   }
 
-  /**
-   * Calculate summary metrics for executive dashboard
-   */
+  /** Verify an OTP via the backend (backend compares the hash; client never sees the code) */
+  async verifyOTP(sessionId, enteredCode) {
+    const session = this.sessions[sessionId];
+    if (!session) {
+      return { success: false, reason: 'SESSION_NOT_FOUND', message: 'No OTP session found. Please request a new code.' };
+    }
+    if (session.status === 'verified') {
+      return { success: true, alreadyVerified: true, message: 'This code was already verified.', token: session.verificationToken, phone: session.phone };
+    }
+    if (session.status === 'expired') {
+      return { success: false, reason: 'EXPIRED', message: 'OTP has expired. Please request a new verification code.' };
+    }
+    if (session.status === 'exhausted' || ((session.attemptsLeft || 1) <= 0)) {
+      return { success: false, reason: 'MAX_ATTEMPTS_EXCEEDED', message: 'Maximum verification attempts exceeded. Please request a new code.' };
+    }
+
+    const startTime = performance.now();
+    try {
+      const res = await fetch(this._apiBase() + '/api/v1/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': this._platformKey() },
+        body: JSON.stringify({ session_id: sessionId, otp: enteredCode, phone: session.phone })
+      });
+      const data = await res.json().catch(() => ({}));
+      const latency = Math.round(performance.now() - startTime);
+
+      if (!res.ok) {
+        if (data.attempts_left !== undefined) {
+          session.attemptsLeft = data.attempts_left;
+          if (data.attempts_left <= 0) session.status = 'exhausted';
+          this.saveSessions();
+        }
+        if (res.status === 429) session.status = 'exhausted';
+        this.addLog({
+          type: 'OTP_VERIFICATION', status: res.status === 429 ? 'EXHAUSTED' : 'INCORRECT',
+          sessionId, phone: session.phone, attemptsLeft: session.attemptsLeft,
+          message: data.error || 'Incorrect OTP attempt', durationMs: latency
+        });
+        return {
+          success: false,
+          reason: res.status === 429 ? 'MAX_ATTEMPTS_EXCEEDED' : (data.error && data.error.includes('expired') ? 'EXPIRED' : 'INVALID_CODE'),
+          message: data.error || 'Incorrect OTP code.',
+          attemptsLeft: data.attempts_left !== undefined ? data.attempts_left : session.attemptsLeft
+        };
+      }
+
+      session.status = 'verified';
+      session.verifiedAt = Date.now();
+      session.verificationToken = data.token || ('otp_' + cryptoRandom());
+      this.saveSessions();
+      this.addLog({
+        type: 'OTP_VERIFICATION', status: 'VERIFIED', sessionId, phone: session.phone,
+        token: session.verificationToken, message: 'OTP verified successfully', durationMs: latency
+      });
+      return {
+        success: true, message: data.message || 'OTP verified successfully',
+        token: session.verificationToken, phone: session.phone, maskedPhone: session.maskedPhone,
+        verifiedAt: session.verifiedAt
+      };
+    } catch (err) {
+      this.addLog({ type: 'OTP_VERIFICATION', status: 'ERROR', sessionId, phone: session.phone, error: err.message, message: 'Verification request failed' });
+      return { success: false, reason: 'NETWORK_ERROR', message: 'Verification request failed: ' + err.message };
+    }
+  }
+
+  /** Calculate summary metrics (local logs) */
   getStats() {
     const totalDispatched = this.logs.filter(l => l.status === 'SENT').length;
     const totalVerified = this.logs.filter(l => l.status === 'VERIFIED').length;
     const totalFailed = this.logs.filter(l => l.status === 'FAILED').length;
     const otpSessionsCount = Object.keys(this.sessions).length;
-    const successRate = totalDispatched > 0 
-      ? Math.round((totalVerified / Math.max(1, totalDispatched)) * 100) 
-      : 100;
+    const successRate = totalDispatched > 0 ? Math.round((totalVerified / Math.max(1, totalDispatched)) * 100) : 100;
+    return { totalDispatched, totalVerified, totalFailed, otpSessionsCount, successRate: Math.min(100, successRate) };
+  }
 
-    return {
-      totalDispatched,
-      totalVerified,
-      totalFailed,
-      otpSessionsCount,
-      successRate: Math.min(100, successRate)
-    };
+  /** Normalize phone to E.164 (+91 default) */
+  normalizePhone(phone) {
+    let cleaned = phone.trim().replace(/[\s\-\(\)\.]/g, '');
+    if (cleaned.startsWith('+91')) return '+' + cleaned.slice(3);
+    if (cleaned.startsWith('00')) return '+' + cleaned.slice(2);
+    if (cleaned.startsWith('0') && cleaned.length === 11) return '+91' + cleaned.slice(1);
+    if (/^\d{10}$/.test(cleaned)) return '+91' + cleaned;
+    if (/^91\d{10}$/.test(cleaned)) return '+' + cleaned;
+    return '+' + cleaned;
   }
 }
 
 // Global instance
 window.otpManager = new OTPManager(window.httpSMSClient);
+
+function cryptoRandom() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(36)).join('');
+}

@@ -7,10 +7,14 @@ services:
     startCommand: node server.js
     envVars:
       - key: HTTPSMS_API_KEY
-        value: uk_wBxpD1neiGl12lD0pW736lzcEQIYasr253HFwsp4ZIE5dDB09OX8JdkZRqkMx1x7
+        value: YOUR_HTTPSMS_API_KEY
       - key: HTTPSMS_FROM
-        value: +918290866520
+        value: +917852081659
       - key: MASTER_API_KEY
-        value: sk_live_omni_7a9f4c82b1d3e6
+        value: sk_live_change_me_in_production
+      - key: SUPABASE_URL
+        value: https://hqmqeimyarxjoekwxekk.supabase.co
+      - key: SUPABASE_KEY
+        value: sb_secret_...
       - key: NODE_ENV
         value: production

@@ -14,9 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-$HTTPSMS_KEY = 'uk_wBxpD1neiGl12lD0pW736lzcEQIYasr253HFwsp4ZIE5dDB09OX8JdkZRqkMx1x7';
-$GATEWAY_FROM = '+918290866520';
-$PLATFORM_KEY = 'sk_live_omni_7a9f4c82b1d3e6';
+$HTTPSMS_KEY = 'YOUR_HTTPSMS_API_KEY';
+$GATEWAY_FROM = '+917852081659';
+$PLATFORM_KEY = 'sk_live_change_me_in_production';
 
 // Session file directory
 $sessionDir = sys_get_temp_dir() . '/omni_otp_sessions';
@@ -47,7 +47,10 @@ if ($action === 'health' || $action === 'api.php') {
 }
 
 // Auth check
-if ($apiKey !== $PLATFORM_KEY && !str_starts_with($apiKey, 'sk_live_')) {
+$isValidPlatformKey = function($key) {
+    return (bool) preg_match('/^sk_live_[A-Za-z0-9_-]{12,}$/', $key);
+};
+if ($apiKey !== $PLATFORM_KEY && !$isValidPlatformKey($apiKey)) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized: Invalid API Key']);
     exit;
@@ -79,8 +82,11 @@ function sendHttpSMS($to, $content, $from, $key) {
 function normalizePhone($p) {
     $clean = preg_replace('/[\s\-\(\)]/', '', $p);
     if (str_starts_with($clean, '00')) $clean = '+' . substr($clean, 2);
-    if (preg_match('/^\d{10}$/', $clean)) $clean = '+91' . $clean;
-    if (!str_starts_with($clean, '+')) $clean = '+' . $clean;
+    if (str_starts_with($clean, '+')) return $clean;
+    if (str_starts_with($clean, '0') && strlen($clean) === 11) return '+91' . substr($clean, 1);
+    if (preg_match('/^\d{10}$/', $clean)) return '+91' . $clean;
+    if (preg_match('/^91\d{10}$/', $clean)) return '+' . $clean;
+    if (!str_starts_with($clean, '+')) return '+' . $clean;
     return $clean;
 }
 

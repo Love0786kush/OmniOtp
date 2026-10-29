@@ -8,9 +8,9 @@
  * 3. Deploy! You now have a 100% free, 24/7 HTTPS Universal OTP API URL worldwide!
  */
 
-const HTTPSMS_API_KEY = "uk_wBxpD1neiGl12lD0pW736lzcEQIYasr253HFwsp4ZIE5dDB09OX8JdkZRqkMx1x7";
-const HTTPSMS_FROM = "+918290866520";
-const MASTER_API_KEY = "sk_live_omni_7a9f4c82b1d3e6";
+const HTTPSMS_API_KEY = "YOUR_HTTPSMS_API_KEY";
+const HTTPSMS_FROM = "+917852081659";
+const MASTER_API_KEY = "sk_live_change_me_in_production";
 
 // Global sessions map for worker runtime (or bind KV namespace "OTP_KV" for persistent multi-region storage)
 const SESSIONS = new Map();
@@ -45,7 +45,8 @@ export default {
 
     // Auth check
     const apiKey = request.headers.get("x-api-key") || (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!apiKey || (apiKey !== MASTER_API_KEY && !apiKey.startsWith("sk_live_"))) {
+    const isValidPlatformKey = (key) => /^sk_live_[A-Za-z0-9_-]{12,}$/.test(key);
+    if (!apiKey || (apiKey !== MASTER_API_KEY && !isValidPlatformKey(apiKey))) {
       return new Response(JSON.stringify({
         success: false,
         error: "Unauthorized. Header x-api-key: sk_live_... is missing or invalid."
@@ -60,18 +61,20 @@ export default {
         if (/^\d{10}$/.test(phone)) phone = "+91" + phone;
         if (!phone.startsWith("+")) phone = "+" + phone;
 
-        const length = body.length || 6;
-        const expiryMinutes = body.expiry_minutes || 5;
+        const length = Math.min(Math.max(parseInt(body.length, 10) || 6, 4), 8);
+        const expiryMinutes = Math.min(Math.max(parseInt(body.expiry_minutes, 10) || 5, 1), 10);
         const appName = body.app_name || "OmniOTP";
 
         // Generate OTP
         const chars = "0123456789";
+        const bytes = new Uint8Array(length);
+        crypto.getRandomValues(bytes);
         let otp = "";
         for (let i = 0; i < length; i++) {
-          otp += chars[Math.floor(Math.random() * chars.length)];
+          otp += chars[bytes[i] % chars.length];
         }
 
-        const sessionId = "sess_" + Math.random().toString(36).substring(2, 12);
+        const sessionId = "sess_" + crypto.randomUUID().replace(/-/g, "").slice(0, 20);
         const expiresAt = Date.now() + expiryMinutes * 60 * 1000;
 
         const tpl = body.template || "Your verification code for {{app_name}} is {{otp}}. Valid for {{expiry}} minutes.";
@@ -123,6 +126,11 @@ export default {
           return new Response(JSON.stringify({ success: false, verified: false, error: "Session not found or expired." }), { status: 404, headers: corsHeaders });
         }
 
+        if (session.attemptsLeft <= 0) {
+          SESSIONS.delete(sessionId);
+          return new Response(JSON.stringify({ success: false, verified: false, error: "Maximum verification attempts exceeded." }), { status: 429, headers: corsHeaders });
+        }
+
         if (Date.now() > session.expiresAt) {
           return new Response(JSON.stringify({ success: false, verified: false, error: "OTP expired." }), { status: 400, headers: corsHeaders });
         }
@@ -132,6 +140,7 @@ export default {
           return new Response(JSON.stringify({ success: true, verified: true, message: "OTP verified successfully!" }), { headers: corsHeaders });
         } else {
           session.attemptsLeft--;
+          if (session.attemptsLeft <= 0) SESSIONS.delete(sessionId);
           return new Response(JSON.stringify({ success: false, verified: false, error: "Incorrect OTP code", attempts_left: session.attemptsLeft }), { status: 400, headers: corsHeaders });
         }
       } catch (e) {

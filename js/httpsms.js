@@ -9,13 +9,105 @@ class HttpSMSClient {
     this.storageConfigKey = 'omni_httpsms_config_v3';
     this.storageKeysKey = 'omni_platform_api_keys_v1';
     this.storageTemplatesKey = 'omni_sms_templates_v1';
+    this.storageGatewaysKey = 'omni_gateway_pool_v1';
 
-    this.defaultApiKey = 'uk_wBxpD1neiGl12lD0pW736lzcEQIYasr253HFwsp4ZIE5dDB09OX8JdkZRqkMx1x7';
-    this.defaultFromNumber = '+918290866520';
+    // Default httpSMS credentials (configured by admin). Browser holds these for display only;
+    // actual dispatch is routed through the backend so the key is never sent to httpsms.com from the browser.
+    this.defaultApiKey = 'pk_JJwFKTe9zE8E_dwF-GsMjbo440Dnz-QC3ZubkHKMhGYzIIYQrC_6NK7FHr1d0fLo';
+    this.defaultFromNumber = '7852081659';
 
+    this.config = { apiKey: this.defaultApiKey, fromNumber: this.defaultFromNumber, isSimulated: false, defaultCountryCode: '+91', serverUrl: 'http://localhost:5000', useBackendServer: true, soundEffects: true, platformApiKey: 'sk_live_change_me_in_production' };
+    this.apiKeys = [];
+    this.templates = [];
+    this.gateways = [];
+    this.ready = this.hydrate();
+  }
+
+  hydrate() {
     this.config = this.loadConfig();
     this.apiKeys = this.loadApiKeys();
     this.templates = this.loadTemplates();
+    this.gateways = this.loadGateways();
+
+    // Sync initial data to Supabase if available
+    if (window.supabaseStorage) {
+      try {
+        Promise.all([
+          window.supabaseStorage.saveAll('omni_api_keys', this.apiKeys),
+          window.supabaseStorage.saveAll('omni_templates', this.templates.map(t => ({
+            id: t.id, name: t.name, category: t.category, text: t.text, is_default: t.isDefault || false
+          }))),
+          window.supabaseStorage.saveAll('omni_gateways', this.gateways)
+        ]).catch(e => console.warn('Initial Supabase sync failed:', e.message));
+      } catch (e) {
+        console.warn('Initial Supabase sync failed:', e.message);
+      }
+    }
+  }
+
+  /**
+   * Helper: Sync data to Supabase when available
+   */
+  async syncToSupabase(table, data) {
+    if (window.supabaseClient && data && data.length) {
+      try {
+        await window.supabaseClient.from(table).upsert(data);
+      } catch (e) {
+        console.warn('Supabase sync failed for', table, e.message);
+      }
+    }
+  }
+
+  loadGateways() {
+    const saved = localStorage.getItem(this.storageGatewaysKey);
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { }
+    }
+    return [];
+  }
+
+  async saveGateways() {
+    localStorage.setItem(this.storageGatewaysKey, JSON.stringify(this.gateways));
+    await this.syncToSupabase('omni_gateways', this.gateways);
+  }
+
+  addGateway(gw) {
+    const item = {
+      id: 'gw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name: gw.name || 'Gateway',
+      from_number: gw.from || gw.from_number || '',
+      api_key: gw.apiKey || gw.api_key || '',
+      cap: Math.max(1, Number(gw.cap) || 1000),
+      sent: 0,
+      active: true
+    };
+    this.gateways.unshift(item);
+    this.saveGateways();
+    return item;
+  }
+
+  removeGateway(id) {
+    this.gateways = this.gateways.filter(g => g.id !== id);
+    this.saveGateways();
+  }
+
+  resetGateway(id) {
+    const g = this.gateways.find(x => x.id === id);
+    if (g) { g.sent = 0; this.saveGateways(); }
+  }
+
+  toggleGateway(id, active) {
+    const g = this.gateways.find(x => x.id === id);
+    if (g) { g.active = active; this.saveGateways(); }
+  }
+
+  pickGateway() {
+    const available = this.gateways.filter(g => g.active && (g.sent || 0) < (g.cap || 1000));
+    if (!available.length) throw new Error('No available gateway: all at cap or inactive.');
+    const gw = available[Math.floor(Math.random() * available.length)];
+    gw.sent = (gw.sent || 0) + 1;
+    this.saveGateways();
+    return gw;
   }
 
   /* -------------------------------------------------------------
@@ -35,7 +127,6 @@ class HttpSMSClient {
         if (!parsed.serverUrl) {
           parsed.serverUrl = 'http://localhost:5000';
         }
-        return parsed;
       } catch (e) {
         console.error('Error parsing config', e);
       }
@@ -44,10 +135,10 @@ class HttpSMSClient {
     const initial = {
       apiKey: this.defaultApiKey,
       fromNumber: this.defaultFromNumber,
-      isSimulated: false, // Live Mode Active
+      isSimulated: false,
       defaultCountryCode: '+91',
       serverUrl: 'http://localhost:5000',
-      useBackendServer: false, // default to direct browser client mode with option to route through server
+      useBackendServer: true, // route through backend by default to avoid exposing httpSMS key in browser
       soundEffects: true
     };
     localStorage.setItem(this.storageConfigKey, JSON.stringify(initial));
@@ -57,6 +148,7 @@ class HttpSMSClient {
   saveConfig(newConfig) {
     this.config = { ...this.config, ...newConfig };
     localStorage.setItem(this.storageConfigKey, JSON.stringify(this.config));
+    this.syncToSupabase('omni_config', [{ key: 'config', value: this.config }]);
     return this.config;
   }
 
@@ -72,14 +164,14 @@ class HttpSMSClient {
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const defaultKeys = [
       {
         id: 'key_1',
         name: 'Master Production Key',
-        key: 'sk_live_omni_7a9f4c82b1d3e6',
+        key: 'sk_live_change_me_in_production',
         created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
         last_used: new Date().toISOString(),
         status: 'ACTIVE',
@@ -109,8 +201,24 @@ class HttpSMSClient {
     return defaultKeys;
   }
 
-  saveApiKeys() {
+  async saveApiKeys() {
     localStorage.setItem(this.storageKeysKey, JSON.stringify(this.apiKeys));
+    await this.syncToSupabase('omni_api_keys', this.apiKeys);
+  }
+
+  addApiKey(name = 'Added API Key', key) {
+    const newKey = {
+      id: 'key_' + Date.now(),
+      name: name.trim() || 'API Key',
+      key: (key || '').trim(),
+      created_at: new Date().toISOString(),
+      last_used: 'Never',
+      status: 'ACTIVE',
+      requests_count: 0
+    };
+    this.apiKeys.unshift(newKey);
+    this.saveApiKeys();
+    return newKey;
   }
 
   generateApiKey(name = 'New App Key') {
@@ -148,7 +256,7 @@ class HttpSMSClient {
 
   getActiveApiKey() {
     const active = this.apiKeys.find(k => k.status === 'ACTIVE');
-    return active ? active.key : 'sk_live_omni_7a9f4c82b1d3e6';
+    return active ? active.key : 'sk_live_change_me_in_production';
   }
 
   /* -------------------------------------------------------------
@@ -159,7 +267,7 @@ class HttpSMSClient {
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const defaultTemplates = [
@@ -204,11 +312,12 @@ class HttpSMSClient {
     return defaultTemplates;
   }
 
-  saveTemplates() {
+  async saveTemplates() {
     localStorage.setItem(this.storageTemplatesKey, JSON.stringify(this.templates));
+    await this.syncToSupabase('omni_templates', this.templates.map(t => ({ id: t.id, name: t.name, category: t.category, text: t.text, is_default: t.isDefault || false })));
   }
 
-  addTemplate({ name, category = 'CUSTOM', text, isDefault = false }) {
+  async addTemplate({ name, category = 'CUSTOM', text, isDefault = false }) {
     if (isDefault) {
       this.templates.forEach(t => t.isDefault = false);
     }
@@ -224,7 +333,7 @@ class HttpSMSClient {
     return newTpl;
   }
 
-  updateTemplate(id, { name, text, isDefault }) {
+  async updateTemplate(id, { name, text, isDefault }) {
     const tpl = this.templates.find(t => t.id === id);
     if (tpl) {
       if (isDefault) {
@@ -323,77 +432,39 @@ class HttpSMSClient {
       throw new Error(toValidation.error);
     }
 
-    const senderNumber = from || this.config.fromNumber;
-    const isSimulationActive = this.config.isSimulated;
-
-    // Simulator branch
-    if (isSimulationActive) {
-      await new Promise(resolve => setTimeout(resolve, 750 + Math.random() * 400));
-      const mockId = 'msg_sim_' + Math.random().toString(36).substring(2, 11);
-      return {
-        status: 'success',
-        simulated: true,
-        message: 'Message dispatched successfully (Simulated Sandbox)',
-        data: {
-          id: mockId,
-          content: content,
-          contact: toValidation.formatted,
-          from: senderNumber || '+918290866520',
-          request_id: requestId || ('req_' + Date.now()),
-          created_at: new Date().toISOString()
+    // Route through backend server when enabled (avoids CORS + keeps httpSMS key server-side)
+    if (this.config.useBackendServer) {
+      const serverUrl = (this.config.serverUrl || 'http://localhost:5000').replace(/\/$/, '');
+      const platformKey = (typeof this.getActiveApiKey === 'function' ? this.getActiveApiKey() : null) || this.config.platformApiKey || 'sk_live_change_me_in_production';
+      try {
+        const response = await fetch(serverUrl + '/api/v1/sms/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': platformKey
+          },
+          body: JSON.stringify({ phone: toValidation.formatted, message: content })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || data.message || ('Server error: HTTP ' + response.status));
         }
-      };
-    }
-
-    // Direct httpSMS Live API
-    if (!this.config.apiKey) {
-      throw new Error('httpSMS API Key is missing. Please configure it in Gateway Settings.');
-    }
-
-    const fromValidation = this.validatePhoneNumber(senderNumber, this.config.defaultCountryCode || '+91');
-    if (!fromValidation.valid) {
-      throw new Error(`Sender "From" number is invalid: ${fromValidation.error}`);
-    }
-
-    const payload = {
-      content: content,
-      from: fromValidation.formatted,
-      to: toValidation.formatted,
-      request_id: requestId || ('req_' + Date.now())
-    };
-
-    try {
-      const response = await fetch('https://api.httpsms.com/v1/messages/send', {
-        method: 'POST',
-        headers: {
-          'x-api-key': this.config.apiKey.trim(),
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const responseData = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        const errorMsg = responseData.message || responseData.data || `httpSMS API error: HTTP ${response.status}`;
-        throw new Error(errorMsg);
+        return {
+          status: 'success',
+          simulated: false,
+          message: data.message || 'SMS dispatched successfully via server',
+          data: data.data || data
+        };
+      } catch (err) {
+        // Backend unreachable: surface the error. No direct browser->httpSMS fallback,
+        // because that would expose the httpSMS API key to the browser.
+        throw new Error('SMS dispatch failed: backend unreachable (' + err.message + ')');
       }
-
-      return {
-        status: responseData.status || 'success',
-        simulated: false,
-        message: responseData.message || 'SMS dispatched successfully via httpSMS',
-        data: responseData.data || {
-          contact: toValidation.formatted,
-          content: content,
-          created_at: new Date().toISOString()
-        }
-      };
-    } catch (err) {
-      console.error('httpSMS send failed:', err);
-      throw new Error(err.message || 'Failed to dispatch SMS through httpSMS API.');
     }
+
+    // If useBackendServer is false (not recommended), still do NOT call httpSMS directly
+    // from the browser. Route everything through the trusted backend.
+    throw new Error('SMS dispatch is only available through the backend server.');
   }
 
   /* -------------------------------------------------------------
@@ -431,5 +502,7 @@ class HttpSMSClient {
   }
 }
 
+// Expose class for callers that need to instantiate a client
+window.HttpSMSClient = HttpSMSClient;
 // Global Client Instance
 window.httpSMSClient = new HttpSMSClient();
