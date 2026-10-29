@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # OmniOTP curl examples
-BASE="http://localhost:5000"
+BASE="https://omniotp.onrender.com"
 KEY="sk_live_change_me_in_production"
 
 # Health

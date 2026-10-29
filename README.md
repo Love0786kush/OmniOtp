@@ -1,5 +1,9 @@
 # ⚡ OmniOTP Cloud — Universal SMS & OTP Platform
 
+**Live View:** https://omniotp.onrender.com/
+
+![OmniOTP Live](https://omniotp.onrender.com/favicon.ico)
+
 Production-grade Universal OTP Provider & SMS Cloud Platform powered by httpSMS Android Gateway. Turn any Android phone into an enterprise SMS API gateway with custom API keys, dynamic templates, bulk SMS broadcast, and ready-to-use Android & Website templates.
 
 ## Features
@@ -24,7 +28,7 @@ Production-grade Universal OTP Provider & SMS Cloud Platform powered by httpSMS 
 4. Open `index.html` in your browser.
 
 ## REST API
-Base URL: `http://localhost:5000`  
+Base URL: `https://omniotp.onrender.com`  
 Auth: `x-api-key: sk_live_...`
 
 - `GET  /api/v1/health`

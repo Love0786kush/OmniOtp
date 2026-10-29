@@ -1,5 +1,5 @@
 // OmniOTP Web Integration Example
-const OMNIOTP_BASE_URL = 'http://localhost:5000';
+const OMNIOTP_BASE_URL = 'https://omniotp.onrender.com';
 const OMNIOTP_API_KEY = 'sk_live_change_me_in_production';
 
 async function sendOtp(phone) {

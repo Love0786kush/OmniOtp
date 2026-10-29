@@ -29,7 +29,7 @@ interface OmniOtpApi {
 
 // Usage:
 // val api = Retrofit.Builder()
-//   .baseUrl("http://10.0.2.2:5000/") // emulator -> localhost
+//   .baseUrl("https://omniotp.onrender.com/") // emulator -> localhost
 //   .addConverterFactory(GsonConverterFactory.create())
 //   .build()
 //   .create(OmniOtpApi::class.java)
